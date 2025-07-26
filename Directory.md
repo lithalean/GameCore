@@ -13,8 +13,8 @@ lithalean@Mac GameCore % tree
 │   │   ├── GameCoreApp.swift
 │   │   └── Item.swift
 │   ├── Core
-│   │   ├── GameMenuSystem.swift
-│   │   └── TitleGrid.swift
+│   │   ├── ChunkGrid.swift
+│   │   └── GameMenuSystem.swift
 │   └── Menu
 │       ├── GameMenuBottom.swift
 │       ├── GameMenuCenter.swift
@@ -35,6 +35,7 @@ lithalean@Mac GameCore % tree
 │               └── xcschememanagement.plist
 ├── Managers
 │   ├── GameStateManager.swift
+│   ├── GridStateManager.swift
 │   └── SlidingPanelManager.swift
 ├── Styles
 │   ├── DynamicTitleBar.swift
@@ -47,8 +48,11 @@ lithalean@Mac GameCore % tree
     ├── CreatorScreen.swift
     ├── MainGameView.swift
     ├── SplashScreen.swift
-    ├── TitleGridView.swift
-    └── TitleScreen.swift
+    └── TitleScreen
+        ├── TitleScreen.swift
+        ├── TitleScreenContent.swift
+        ├── TitleScreenNavigation.swift
+        └── TitleScreenView.swift
 
-21 directories, 28 files
+22 directories, 31 files
 lithalean@Mac GameCore % 

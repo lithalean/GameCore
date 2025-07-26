@@ -1,7 +1,7 @@
 # GameCore — AI Context Document
 
 **Date**: January 2025  
-**Status**: Active Development - Core UI Framework Complete  
+**Status**: Active Development - Core UI Framework Complete with Enhanced Memory Management  
 **Purpose**: Accurate context for AI systems working with GameCore codebase
 
 ---
@@ -27,22 +27,25 @@
 GameCore/
 ├── Styles/
 │   ├── TitleBackground.swift          # Gradient background component
-│   ├── TitleGridView.swift           # 3D RealityKit grid overlay
 │   ├── MenuButton.swift              # Modern menu button with cross-platform haptics
 │   └── TitleButton.swift             # Styled game buttons (primary/secondary/standard)
 ├── Views/
-│   ├── MainGameView.swift            # Root navigation container with NavigationStack
-│   ├── TitleScreen.swift             # Animated title screen with 5-track sliding panels
+│   ├── MainGameView.swift            # Root navigation with persistent background architecture
+│   ├── TitleScreen/
+│   │   ├── TitleScreen.swift         # Animated title screen with 5-track sliding panels
+│   │   ├── TitleScreenContent.swift  # Modular title screen UI content
+│   │   └── TitleScreenView.swift     # Persistent 3D background + ChunkGrid for all screens
+│   ├── Navigation/
+│   │   └── TitleScreenNavigation.swift # Settings, load game, and other navigation screens
 │   ├── EnhancedGameView.swift        # In-game UI wrapper with menu integration
-│   ├── GameSettingsView.swift        # Settings interface
-│   ├── GameLoadView.swift            # Save/load interface
 │   ├── CreatorScreen.swift           # Game creator interface with windowed layout
 │   └── SplashScreen.swift            # Initial app loading screen
 ├── Managers/
 │   ├── GameStateManager.swift        # Navigation and state management with NavigationPath
+│   ├── GridStateManager.swift        # RealityKit memory management and entity tracking
 │   └── SlidingPanelManager.swift     # Panel animation system (unused in current implementation)
 ├── GameCore/Core/
-│   └── TitleGrid.swift               # RealityKit Entity generation for 3D grid
+│   └── ChunkGrid.swift               # RealityKit Entity generation for 3D chunk-based grid
 ├── Styles/
 │   ├── GameMenuSystem.swift          # 3-box modular menu system
 │   ├── GameMenuTop.swift             # Top menu bar component
@@ -53,10 +56,10 @@ GameCore/
 ```
 
 ### Component Dependencies
-- TitleScreen depends on: TitleBackground, TitleGridView, TitleButton
-- MainGameView depends on: TitleScreen, GameStateManager, CreatorScreen
-- TitleGridView depends on: TitleGrid (RealityKit Entity)
-- CreatorScreen depends on: TitleBackground, TitleGridView, GameMenuSystem
+- TitleScreen depends on: TitleBackground, TitleScreenView, TitleButton
+- MainGameView depends on: TitleScreen, GameStateManager, CreatorScreen, TitleScreenView (persistent)
+- TitleScreenView depends on: ChunkGrid (RealityKit Entity), GridStateManager
+- CreatorScreen depends on: GameMenuSystem (floats over persistent background)
 - GameMenuSystem depends on: GameMenuTop, GameMenuCenter, GameMenuBottom
 - All components use cross-platform navigation macros
 
@@ -67,16 +70,18 @@ GameCore/
 ### Working Components
 - **TitleScreen.swift**: Complete 5-track sliding panel system with animations
 - **TitleBackground.swift**: Gradient background component (black to blue/purple)
-- **TitleGridView.swift**: RealityKit 3D grid with action RPG camera perspective
-- **TitleGrid.swift**: RealityKit Entity generation with platform-specific colors
+- **TitleScreenView.swift**: Persistent RealityKit 3D ChunkGrid with action RPG camera perspective
+- **ChunkGrid.swift**: RealityKit Entity generation with platform-specific colors and chunk borders
 - **GameStateManager.swift**: NavigationPath-based state management
-- **MainGameView.swift**: Root navigation with NavigationStack implementation
+- **GridStateManager.swift**: RealityKit memory management and entity cleanup system
+- **MainGameView.swift**: Root navigation with persistent background architecture
 - **MenuButton.swift**: Cross-platform button with modern sensory feedback
 - **CreatorScreen.swift**: Windowed game interface with centered overlay
 - **GameMenuSystem.swift**: Modular 3-box layout system
 - **Cross-platform navigation**: Conditional compilation for iOS/macOS/tvOS
 
 ### Key Features Implemented
+- **Persistent Background Architecture**: Single TitleScreenView + ChunkGrid across all screens
 - Title animation: slides from center to top (-20 offset) while buttons slide in from right
 - 5-track button layout: positions 1,2,3,spacer,5 with consistent alignment across panels
 - Sliding panel system: main/settings/loadGame panels with asymmetric transitions
@@ -84,6 +89,7 @@ GameCore/
 - Cross-platform navigation: iOS navigationBarHidden, macOS toolbar hidden, tvOS navigationBarHidden
 - Screen transitions: Fade to black transition between title and creator screens
 - Windowed interface: GameMenuSystem overlays on background with constrained sizing
+- **Memory Management**: GridStateManager tracks entities and prevents multiple grid instances
 
 ### Animation System Implementation
 ```swift
@@ -98,22 +104,21 @@ startNewGame(): Quick button fade (0.2s) -> black transition (0.3s) -> navigate 
 
 ### Component Integration Pattern
 ```swift
-// How components actually connect
+// NEW: Persistent background architecture
 ZStack {
-    TitleBackground()    // Gradient component (no dependencies)
-    TitleGridView()      // RealityKit component (depends on TitleGrid)
-    // UI layer here
+    // PERSISTENT LAYER (never changes)
+    TitleBackground()    // Gradient component
+    TitleScreenView()    // ChunkGrid component with memory management
+    
+    // FLOATING CONTENT LAYER (changes per screen)
+    TitleScreenContent() // or CreatorScreen() or SettingsContent()
 }
 
-// CreatorScreen windowed layout
-ZStack {
-    TitleBackground()    // Full screen background
-    TitleGridView()      // Full screen 3D grid
-    GameMenuSystem()     // Centered overlay (800x600)
-        .background(Color.black.opacity(0.8))
-        .cornerRadius(12)
-        .shadow(...)
-}
+// CreatorScreen now just floating content
+GameMenuSystem()     // Centered overlay (800x600)
+    .background(Color.black.opacity(0.8))
+    .cornerRadius(12)
+    .shadow(...)
 ```
 
 ---
@@ -123,12 +128,13 @@ ZStack {
 ### RealityKit Integration
 - Uses RealityView with PerspectiveCamera
 - Camera positioned at [0, 15, 35] for action RPG angle
-- Grid generated via TitleGrid.makeGridEntity()
+- Grid generated via ChunkGrid.makeGridEntity()
 - Platform-specific color handling (UIColor/NSColor)
+- **Enhanced Memory Management**: GridStateManager tracks entity lifecycle
 
 ### Grid Specifications
 - 100x100 grid with 1.0 spacing
-- Red chunk borders at edges
+- Red chunk borders at edges (hence "ChunkGrid")
 - White major lines every 10 units
 - Gray minor lines with 0.3 alpha
 - Text labels with billboard components
@@ -140,55 +146,55 @@ ZStack {
 - Billboard text for readability
 - Unlit materials for performance
 - Platform-optimized font loading
+- **Entity tracking and cleanup via GridStateManager**
 
 ---
 
-## **CRITICAL ISSUES - REALITYKIT MEMORY LEAKS & CRASHES**
+## **MEMORY MANAGEMENT SOLUTION - IMPLEMENTED**
 
-### **Known Problems**
-- **macOS Freeze**: App locks up and requires force quit shortly after CreatorScreen loads
-- **Memory Leak**: RealityKit entities not properly deallocated when views switch
-- **Performance Degradation**: Multiple grid instances accumulate in memory
-- **Navigation Issues**: Sometimes appears to go back to splash screen instead of forward
+### **Fixed Architecture**
+- **Single Grid Instance**: Only one TitleScreenView/ChunkGrid exists across entire app
+- **Persistent Background**: Grid and background never get recreated or destroyed
+- **Floating Content**: All screens (CreatorScreen, Settings, etc.) float over persistent background
+- **GridStateManager**: Tracks entity count and prevents memory leaks
 
-### **Root Cause Analysis**
-- **RealityKit Memory Management**: Known issue with ARView/RealityView not properly deallocating
-- **Entity Accumulation**: TitleGrid.makeGridEntity() creates ~400+ entities (lines + labels + base plane)
-- **No Cleanup**: No proper entity removal when views disappear
-- **Multiple Instances**: Grid recreated on each view appearance without cleanup
-
-### **Attempted Solutions (DO NOT REPEAT)**
-- ❌ **Entity state management**: Caused grid to disappear
-- ❌ **onDisappear cleanup**: Still leaked memory
-- ❌ **SwiftUI Canvas replacement**: Not what was requested
-- ❌ **Reduced grid complexity**: Changed original design intent
-- ❌ **Conditional grid loading**: Added unnecessary complexity
-
-### **Current Workarounds**
-- Grid works perfectly on TitleScreen
-- Issue only occurs when transitioning to CreatorScreen
-- Problem likely related to multiple RealityKit instances running simultaneously
-
-### **Technical Details**
+### **Technical Implementation**
 ```swift
-// Current TitleGrid implementation (CAUSES CRASHES)
-- 100x100 grid (10,000 lines)
-- ~200 text labels with billboard components
-- 1 base plane
-- 3 axis markers
-- Total: ~400+ RealityKit entities per grid instance
+// NEW: Persistent background in MainGameView
+ZStack {
+    // PERSISTENT BACKGROUND + GRID (NEVER CHANGES)
+    if !showSplash {
+        TitleBackground()
+        TitleScreenView()  // Single grid instance
+    }
+    
+    // FLOATING CONTENT LAYER
+    switch currentDisplayState {
+        case .titleScreen: TitleScreenContent()
+        case .transition: ScreenTransitionOverlay()
+        // etc.
+    }
+}
 
-// Memory leak pattern:
-TitleScreen (Grid Instance 1) -> CreatorScreen (Grid Instance 2) -> CRASH
+// GridStateManager prevents multiple instances
+@Observable class GridStateManager {
+    static let shared = GridStateManager()
+    private(set) var activeGrids: [String: Entity] = [:]
+    // Tracks and cleans up entities
+}
 ```
 
-### **DO NOT ATTEMPT**
-- Do not modify TitleGrid.swift without explicit instructions
-- Do not add entity cleanup code
-- Do not replace RealityKit with SwiftUI Canvas
-- Do not reduce grid complexity
-- Do not add state management to TitleGridView
-- Do not create fallback grid systems
+### **Problem Resolution**
+- ✅ **macOS Freeze**: Fixed by eliminating multiple grid instances
+- ✅ **Memory Leak**: Prevented by persistent architecture + GridStateManager
+- ✅ **Performance Degradation**: Eliminated by single grid approach
+- ✅ **Navigation Issues**: Resolved by floating content over persistent background
+
+### **Previous Critical Issues (NOW RESOLVED)**
+- ❌ ~~macOS Freeze: App locks up and requires force quit shortly after CreatorScreen loads~~
+- ❌ ~~Memory Leak: RealityKit entities not properly deallocated when views switch~~
+- ❌ ~~Performance Degradation: Multiple grid instances accumulate in memory~~
+- ❌ ~~Navigation Issues: Sometimes appears to go back to splash screen instead of forward~~
 
 ---
 
@@ -232,6 +238,19 @@ Uses platform-specific color types:
 }
 ```
 
+### GridStateManager (NEW)
+```swift
+@Observable class GridStateManager {
+    static let shared = GridStateManager()
+    private(set) var activeGrids: [String: Entity] = [:]
+    private(set) var gridCount: Int = 0
+    
+    func registerGrid(_ entity: Entity, identifier: String)
+    func cleanupGrid(identifier: String)
+    func printDebugInfo() // For development monitoring
+}
+```
+
 ### Navigation Destinations
 ```swift
 enum GameDestination: Hashable {
@@ -253,18 +272,19 @@ enum PanelType {
 ### Modular Design Philosophy
 Each component is completely self-contained:
 - TitleBackground: Just gradient, no dependencies
-- TitleGridView: Just 3D grid, no dependencies  
-- TitleScreen: Combines background + grid + UI, but through composition
-- CreatorScreen: Combines background + grid + GameMenuSystem overlay
+- TitleScreenView: ChunkGrid + camera, with GridStateManager integration
+- TitleScreenContent: Modular UI content that floats over background
+- CreatorScreen: Just GameMenuSystem overlay, floats over persistent background
 - GameMenuSystem: Combines GameMenuTop + GameMenuCenter + GameMenuBottom
 - No component has knowledge of others' internal state
 
 ### Integration Example
 ```swift
+// NEW: Persistent + Floating architecture
 ZStack {
-    TitleBackground()    // Gradient layer
-    TitleGridView()      // 3D grid layer
-    // Custom game UI here
+    TitleBackground()     // Persistent gradient layer
+    TitleScreenView()     // Persistent 3D grid layer
+    // Any floating content here
 }
 ```
 
@@ -308,12 +328,12 @@ ZStack {
 4. After 2.4 seconds, buttons slide in from right
 5. User interactions trigger panel transitions
 
-### New Game Flow
+### New Game Flow (UPDATED - NO MORE CRASH)
 1. "New Game" button clicked
 2. Buttons fade out (0.2s)
 3. Black screen transition (0.3s)
-4. Navigate to CreatorScreen
-5. **CRASH OCCURS** shortly after CreatorScreen loads
+4. Navigate to CreatorScreen (floats over persistent background)
+5. ✅ **NO CRASH** - persistent architecture prevents memory issues
 
 ### Button Layout Implementation
 Uses Group views with conditional content rendering:
@@ -348,7 +368,7 @@ camera.look(at: [0, 0, 0], from: camera.transform.translation, relativeTo: nil)
 
 ### Data Flow
 MainGameView -> GameStateManager -> NavigationStack -> TitleScreen -> Panel System
-MainGameView -> GameStateManager -> NavigationStack -> CreatorScreen -> GameMenuSystem
+MainGameView -> GameStateManager -> NavigationStack -> CreatorScreen -> GameMenuSystem (floating)
 
 ### Extension Points for Game Integration
 - GameMenuCenter: Primary content area for actual game creation tools
@@ -372,6 +392,7 @@ MainGameView -> GameStateManager -> NavigationStack -> CreatorScreen -> GameMenu
 1. Add case to GameDestination enum
 2. Add navigationDestination case in MainGameView
 3. Add navigation method to GameStateManager
+4. Create floating content (no background/grid needed)
 
 ### Platform-Specific Features
 Use conditional compilation at view level:
@@ -384,11 +405,11 @@ Use conditional compilation at view level:
 ```
 
 ### Performance Considerations
-- RealityKit grid is performance-optimized with unlit materials
+- ChunkGrid is performance-optimized with unlit materials
 - Lazy loading patterns for complex components
 - Minimal state management for smooth animations
 - Platform-appropriate animation curves
-- **CRITICAL**: Multiple RealityKit instances cause memory leaks and crashes
+- **RESOLVED**: Memory management via persistent architecture
 
 ---
 
@@ -402,11 +423,11 @@ Use conditional compilation at view level:
 5. Verify track alignment across panels
 
 ### Debugging RealityKit Grid
-1. Check TitleGridView appears behind UI
+1. Check TitleScreenView appears behind UI
 2. Verify camera angle shows grid properly
 3. Check platform-specific color compilation
 4. Test grid performance on target devices
-5. **CRITICAL**: Monitor memory usage when transitioning between screens
+5. **RESOLVED**: Memory usage now stable with persistent architecture
 
 ### Adding Custom Game Content
 Replace GameMenuCenter placeholder with actual game content while maintaining:
@@ -414,15 +435,24 @@ Replace GameMenuCenter placeholder with actual game content while maintaining:
 - Platform-specific navigation hiding
 - Consistent visual design
 - Windowed overlay approach
+- Floating over persistent background
 
 ---
 
-## Current Limitations
+## Current Status
 
-### Critical Issues
-- **RealityKit Memory Leaks**: Multiple grid instances cause crashes on macOS
-- **Navigation Instability**: Transition from TitleScreen to CreatorScreen problematic
-- **Performance Degradation**: App becomes unresponsive after CreatorScreen loads
+### Resolved Issues
+- ✅ **RealityKit Memory Leaks**: Fixed with persistent architecture
+- ✅ **Navigation Stability**: Resolved with floating content approach
+- ✅ **Performance**: Stable with single grid instance
+- ✅ **macOS Compatibility**: Grid loads and maintains properly
+
+### Working Features
+- Persistent 3D ChunkGrid background across all screens
+- Smooth navigation transitions without memory issues
+- Modular floating content architecture
+- Cross-platform stability (iOS, macOS, tvOS)
+- Enhanced memory monitoring via GridStateManager
 
 ### Not Yet Implemented
 - Actual save/load functionality (UI structure ready)
@@ -431,7 +461,6 @@ Replace GameMenuCenter placeholder with actual game content while maintaining:
 - Game content integration (GameMenuCenter ready)
 - Audio system integration
 - Input system integration
-- **RealityKit memory management solution**
 
 ### Placeholder Components
 - GameMenuTop: Has basic structure, needs actual toolbar functionality
@@ -446,8 +475,8 @@ Replace GameMenuCenter placeholder with actual game content while maintaining:
 - More complex panel layouts
 - Custom button styles
 - Extended 3D background options
-- **Alternative grid implementation to avoid RealityKit issues**
+- Enhanced GridStateManager monitoring
 
 ---
 
-*This document reflects the actual current state as of January 2025. The core UI framework is complete but has critical RealityKit memory management issues that cause crashes on macOS when transitioning to CreatorScreen.*
+*This document reflects the current state as of January 2025. The core UI framework is complete with resolved RealityKit memory management through persistent background architecture. The framework is stable and ready for game content integration.*
