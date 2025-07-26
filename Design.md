@@ -51,7 +51,7 @@ GameCore implements Apple's Liquid Glass design language introduced at WWDC 2025
 ### Core Animation Values
 ```swift
 // Standard GameCore animation timings
-let quickAnimation: Double = 0.2      // Micro-interactions, button presses
+let quickAnimation: Double = 0.2      // Micro-interactions, button presses, screen transitions
 let standardAnimation: Double = 0.3   // Panel transitions, state changes  
 let slowAnimation: Double = 0.5       // Major layout changes, screen transitions
 let extendedAnimation: Double = 0.8   // Title movements, complex transformations
@@ -63,6 +63,10 @@ let extendedAnimation: Double = 0.8   // Title movements, complex transformation
 .animation(.spring(duration: 0.6, bounce: 0.2))  // Panel sliding
 .animation(.easeInOut(duration: 0.8))            // Title movement
 .animation(.interpolatingSpring(mass: 1.0, stiffness: 100, damping: 10)) // Glass morphing
+
+// Screen transition animations
+.animation(.easeOut(duration: 0.2))              // Button fade out
+.animation(.easeInOut(duration: 0.3))            // Black screen transition
 ```
 
 ### Transition Specifications
@@ -70,6 +74,7 @@ let extendedAnimation: Double = 0.8   // Title movements, complex transformation
 - **Glass morphing**: 0.6 second duration with bounce: 0.2 for organic feel
 - **Content focus**: 0.3 second ease-out for tab bar shrinking/expanding
 - **Depth changes**: 0.5 second interpolating spring for layer depth adjustments
+- **Screen transitions**: Quick fade (0.2s) + black overlay (0.3s) for seamless navigation
 
 ---
 
@@ -86,6 +91,25 @@ Track 4: Spacer (56pt fixed height for visual breathing room)
 Track 5: Navigation action (Credits / Back to Menu)
 ```
 
+### Windowed Interface Layout
+CreatorScreen implements a windowed overlay system:
+
+```
+Full Screen Background Layer:
+├── TitleBackground (gradient fill)
+└── TitleGridView (3D grid overlay)
+
+Centered Overlay Layer:
+└── GameMenuSystem (800×600 constrained)
+    ├── Semi-transparent background (black 80% opacity)
+    ├── Corner radius (12pt)
+    ├── Drop shadow (20pt radius, 10pt offset)
+    └── 3-Box Layout:
+        ├── GameMenuTop (60pt height)
+        ├── GameMenuCenter (flexible height)
+        └── GameMenuBottom (60pt height)
+```
+
 ### Spacing Constants
 ```swift
 struct GlassConstants {
@@ -99,10 +123,15 @@ struct GlassConstants {
     
     // Corner radius values  
     static let smallRadius: CGFloat = 6    // Small buttons, badges
-    static let mediumRadius: CGFloat = 12  // Standard buttons
+    static let mediumRadius: CGFloat = 12  // Standard buttons, GameMenuSystem overlay
     static let largeRadius: CGFloat = 16   // Panels, cards
     static let xlRadius: CGFloat = 20      // Large panels
     static let xxlRadius: CGFloat = 24     // Full-screen overlays
+    
+    // Windowed interface constraints
+    static let overlayMaxWidth: CGFloat = 800   // GameMenuSystem max width
+    static let overlayMaxHeight: CGFloat = 600  // GameMenuSystem max height
+    static let overlayOpacity: Double = 0.8     // Background transparency
 }
 ```
 
@@ -117,6 +146,9 @@ static let tvOSTouchTarget: CGFloat = 80     // tvOS focus engine
 static let compactButtonHeight: CGFloat = 44
 static let standardButtonHeight: CGFloat = 56  
 static let prominentButtonHeight: CGFloat = 64
+
+// Menu system heights
+static let menuBarHeight: CGFloat = 60       // Top/Bottom bars
 ```
 
 ---
@@ -132,6 +164,7 @@ enum GlassThickness {
     case medium       // 0.3 opacity - prominent panels
     case thick        // 0.4 opacity - modal overlays
     case ultraThick   // 0.5 opacity - blocking content
+    case gameOverlay  // 0.8 opacity - GameMenuSystem background
 }
 ```
 
@@ -142,6 +175,7 @@ static let subtleBlur: CGFloat = 8       // Behind floating controls
 static let standardBlur: CGFloat = 12    // Panel backgrounds
 static let prominentBlur: CGFloat = 16   // Modal overlays
 static let heavyBlur: CGFloat = 24       // Content-blocking modals
+static let gameOverlayBlur: CGFloat = 20 // GameMenuSystem background
 ```
 
 ### Environmental Adaptivity
@@ -173,6 +207,11 @@ struct LiquidGlassColors {
         return Color(.systemFill)
         #endif
     }
+    
+    // GameMenuSystem overlay background
+    static var gameOverlay: Color {
+        Color.black.opacity(0.8)
+    }
 }
 ```
 
@@ -181,6 +220,7 @@ struct LiquidGlassColors {
 - **Light interaction**: Controls respond to ambient light changes with subtle luminance shifts
 - **Motion parallax**: Slight depth movement (2-4pt) when device orientation changes
 - **Color bleeding**: Adjacent content colors subtly influence glass tint with 5% blending
+- **Grid interaction**: 3D grid visible through semi-transparent overlays
 
 ### Depth and Shadow
 ```swift
@@ -188,6 +228,7 @@ struct LiquidGlassColors {
 static let subtleShadow = Shadow(color: .black.opacity(0.1), radius: 4, y: 2)
 static let standardShadow = Shadow(color: .black.opacity(0.15), radius: 8, y: 4)  
 static let prominentShadow = Shadow(color: .black.opacity(0.2), radius: 12, y: 6)
+static let overlayShadow = Shadow(color: .black.opacity(0.3), radius: 20, y: 10)  // GameMenuSystem
 ```
 
 ---
@@ -263,8 +304,56 @@ gridDesign: {
     gridPattern: structured with major/minor line hierarchy
     colorScheme: adapts to platform (red borders, white major, gray minor)
     performance: optimized rendering with unlit materials
+    visibility: maintains visibility through glass overlays
 }
 ```
+
+### CreatorScreen Windowed Interface Design
+```swift
+// Windowed overlay specifications
+windowedInterface: {
+    backgroundLayer: TitleBackground + TitleGridView (full screen)
+    overlayLayer: GameMenuSystem (centered, constrained)
+    overlaySize: maxWidth 800pt, maxHeight 600pt
+    overlayBackground: black 80% opacity
+    overlayRadius: 12pt corner radius
+    overlayShadow: 20pt radius, 10pt y-offset, 30% opacity
+    layering: background always visible around edges
+}
+```
+
+---
+
+## **PERFORMANCE AND STABILITY CONSIDERATIONS**
+
+### **Critical Performance Issues**
+```swift
+// Known problematic patterns - DO NOT USE
+realityKitMemoryLeak: {
+    problem: Multiple RealityView instances cause memory leaks
+    symptom: App freezes and requires force quit on macOS
+    trigger: Transitioning from TitleScreen to CreatorScreen
+    entityCount: ~400+ entities per grid instance (too many)
+    memoryImpact: Exponential growth with multiple grids
+}
+```
+
+### **Resource Management Guidelines**
+- **RealityKit Limits**: Single grid instance maximum recommended
+- **Entity Count**: Keep total entities under 100 for stability
+- **Memory Monitoring**: Watch for accumulation patterns
+- **Cleanup Requirements**: Proper entity disposal on view changes
+
+### **Design Constraints Due to Performance**
+- **Single Grid Policy**: Only one TitleGridView active at a time
+- **Simplified Entities**: Reduce text labels and complex geometry
+- **Memory Budgets**: Monitor total RealityKit memory usage
+- **Fallback Strategies**: Have non-RealityKit alternatives ready
+
+### **Platform-Specific Performance**
+- **macOS**: Most susceptible to RealityKit memory issues
+- **iOS**: Better memory management but still affected
+- **tvOS**: Limited testing, assume similar issues
 
 ---
 
@@ -281,6 +370,7 @@ gridDesign: {
 - **Sidebar transparency**: NavigationSplitView with glass material sidebar
 - **Hover effects**: Subtle luminance increase (5%) on mouse hover over glass elements
 - **Focus states**: Keyboard navigation with 2pt blue outline on glass controls
+- **Critical**: Most affected by RealityKit memory leaks
 
 ### tvOS 26 Specifics
 - **Focus engine**: 8pt focus outline with glass-appropriate contrast
@@ -313,6 +403,7 @@ struct OptimizedGlassEffect: ViewModifier {
 - **Battery optimization**: Reduced glass complexity in low power mode
 - **Memory efficiency**: Lazy loading of complex glass materials
 - **Thermal management**: Automatic quality reduction under thermal pressure
+- **RealityKit limits**: Single grid instance maximum
 
 ### Accessibility Considerations
 - **Reduce transparency**: Automatic fallback to solid backgrounds when enabled
@@ -344,6 +435,28 @@ struct GlassContainer<Content: View>: View {
 }
 ```
 
+### GameMenuSystem Windowed Pattern
+```swift
+struct WindowedGameInterface<Content: View>: View {
+    let content: Content
+    
+    var body: some View {
+        ZStack {
+            // Full screen background layers
+            TitleBackground()
+            TitleGridView()  // CAUTION: Memory leak risk
+            
+            // Centered windowed overlay
+            content
+                .frame(maxWidth: 800, maxHeight: 600)
+                .background(Color.black.opacity(0.8))
+                .cornerRadius(12)
+                .shadow(color: .black.opacity(0.3), radius: 20, x: 0, y: 10)
+        }
+    }
+}
+```
+
 ### Animation State Management Pattern
 ```swift
 // Centralized animation state for consistent timing across components
@@ -351,6 +464,7 @@ struct GlassContainer<Content: View>: View {
     var titleOffset: CGFloat = 0
     var panelState: PanelType = .main
     var isTransitioning: Bool = false
+    var buttonsOpacity: Double = 1.0
     
     func animateToPanel(_ panel: PanelType) {
         guard !isTransitioning else { return }
@@ -364,8 +478,55 @@ struct GlassContainer<Content: View>: View {
             isTransitioning = false
         }
     }
+    
+    func startScreenTransition() {
+        // Quick button fade for screen transitions
+        withAnimation(.easeOut(duration: 0.2)) {
+            buttonsOpacity = 0.0
+        }
+    }
 }
 ```
+
+---
+
+## **CRITICAL DEVELOPMENT WARNINGS**
+
+### **RealityKit Implementation Warnings**
+```swift
+// DANGEROUS PATTERNS - DO NOT USE
+multipleGrids: {
+    warning: "Never have multiple TitleGridView instances active"
+    consequence: "Memory leaks leading to app crashes"
+    platforms: "Especially critical on macOS"
+}
+
+entityCleanup: {
+    warning: "Do not attempt manual entity cleanup"
+    consequence: "Can cause grid to disappear entirely"
+    recommendation: "Let RealityKit handle lifecycle"
+}
+
+gridModification: {
+    warning: "Do not reduce grid complexity without permission"
+    consequence: "Changes original design intent"
+    recommendation: "Address performance at architecture level"
+}
+```
+
+### **Memory Management Guidelines**
+- **Single Instance Rule**: Only one RealityKit view per navigation stack
+- **Transition Monitoring**: Watch memory usage during screen changes
+- **Crash Recovery**: Implement graceful degradation if RealityKit fails
+- **Testing Requirements**: Always test transitions on macOS
+
+### **Forbidden Modifications**
+- ❌ Adding @State entity management to TitleGridView
+- ❌ Adding onDisappear cleanup to RealityKit components
+- ❌ Replacing RealityKit with SwiftUI Canvas
+- ❌ Reducing grid entity count without permission
+- ❌ Creating fallback grid systems
+- ❌ Modifying TitleGrid.swift without explicit instructions
 
 ---
 
@@ -377,6 +538,8 @@ struct GlassContainer<Content: View>: View {
 - Transparency effects degrade gracefully on older hardware
 - All interactive elements meet minimum touch target requirements
 - Text contrast ratios exceed WCAG AA standards in all glass contexts
+- Windowed overlays maintain proper layering
+- Grid visibility through glass materials
 
 ### Cross-Platform Testing Matrix
 ```
@@ -386,6 +549,8 @@ Animation Timing   ✓ 60fps   ✓ 120fps    ✓ 60fps
 Touch Targets      ✓ 44pt    ✓ Mouse     ✓ 80pt
 Accessibility      ✓ Full    ✓ Full      ✓ Full
 Performance        ✓ A13+    ✓ M1+       ✓ A12+
+RealityKit         ⚠ Stable ❌ Crashes   ⚠ Unknown
+Memory Usage       ✓ Good    ❌ Leaks    ⚠ Monitor
 ```
 
 ### Performance Benchmarks
@@ -393,6 +558,35 @@ Performance        ✓ A13+    ✓ M1+       ✓ A12+
 - Animation smoothness: 60fps minimum, 120fps preferred
 - Memory usage: <50MB additional for all glass effects
 - Battery impact: <5% increase over non-glass implementation
+- **RealityKit memory**: <200MB total, monitor for leaks
+- **Entity count**: <100 total entities per scene
+
+### **Critical Testing Scenarios**
+```swift
+crashTestSequence: {
+    steps: [
+        "Launch app",
+        "Wait for TitleScreen to fully load",
+        "Click 'New Game'", 
+        "Wait for CreatorScreen transition",
+        "Monitor for app freeze (typically within 30 seconds)",
+        "Force quit if app becomes unresponsive"
+    ]
+    expectedResult: "Should not crash or freeze"
+    actualResult: "App freezes and requires force quit on macOS"
+}
+
+memoryTestSequence: {
+    steps: [
+        "Monitor memory usage in Xcode",
+        "Navigate between TitleScreen and CreatorScreen",
+        "Watch for memory accumulation patterns",
+        "Check for entity cleanup on view disappear"
+    ]
+    expectedResult: "Memory should stabilize after transitions"
+    actualResult: "Memory continuously increases, no cleanup"
+}
+```
 
 ---
 
@@ -407,6 +601,35 @@ Design system accommodates rumored "Glasswing" iPhone (2027) with curved glass e
 ### Accessibility Evolution  
 Framework designed to expand with future accessibility APIs while maintaining current WCAG compliance and supporting emerging assistive technologies.
 
+### **RealityKit Alternatives**
+- **Metal rendering**: Custom 3D grid implementation
+- **SceneKit integration**: Alternative 3D framework
+- **SwiftUI Canvas**: 2D grid approximation (not preferred)
+- **Hybrid approach**: Static background with animated overlays
+
 ---
 
-*This document reflects Apple's Liquid Glass design language as introduced at WWDC 2025 and implemented in iOS 26, macOS 26, and tvOS 26. All specifications are based on official Apple documentation and developer guidelines current as of January 2025.*
+## **EMERGENCY PROCEDURES**
+
+### **If App Crashes During Development**
+1. **Immediate**: Force quit application
+2. **Diagnostic**: Check Xcode memory graph for entity accumulation
+3. **Temporary**: Comment out TitleGridView in problematic screens
+4. **Report**: Document exact reproduction steps
+5. **Never**: Attempt to "fix" by modifying grid implementation
+
+### **If Grid Disappears**
+1. **Check**: TitleGridView is properly included in ZStack
+2. **Verify**: TitleGrid.makeGridEntity() is being called
+3. **Confirm**: Platform-specific color compilation is working
+4. **Avoid**: Adding state management or cleanup code
+
+### **Memory Leak Mitigation**
+1. **Monitor**: Use Xcode memory tools during development
+2. **Limit**: Keep to single RealityKit instance when possible
+3. **Document**: Record memory usage patterns
+4. **Escalate**: Report significant memory growth immediately
+
+---
+
+*This document reflects Apple's Liquid Glass design language as implemented in GameCore with critical performance warnings for RealityKit integration. All specifications are based on official Apple documentation and real-world testing as of January 2025.*

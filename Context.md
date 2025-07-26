@@ -35,20 +35,29 @@ GameCore/
 │   ├── TitleScreen.swift             # Animated title screen with 5-track sliding panels
 │   ├── EnhancedGameView.swift        # In-game UI wrapper with menu integration
 │   ├── GameSettingsView.swift        # Settings interface
-│   └── GameLoadView.swift            # Save/load interface
+│   ├── GameLoadView.swift            # Save/load interface
+│   ├── CreatorScreen.swift           # Game creator interface with windowed layout
+│   └── SplashScreen.swift            # Initial app loading screen
 ├── Managers/
 │   ├── GameStateManager.swift        # Navigation and state management with NavigationPath
 │   └── SlidingPanelManager.swift     # Panel animation system (unused in current implementation)
 ├── GameCore/Core/
 │   └── TitleGrid.swift               # RealityKit Entity generation for 3D grid
+├── Styles/
+│   ├── GameMenuSystem.swift          # 3-box modular menu system
+│   ├── GameMenuTop.swift             # Top menu bar component
+│   ├── GameMenuCenter.swift          # Center content area component
+│   └── GameMenuBottom.swift          # Bottom menu bar component
 └── App/
     └── SplashScreen.swift            # Initial app loading screen
 ```
 
 ### Component Dependencies
 - TitleScreen depends on: TitleBackground, TitleGridView, TitleButton
-- MainGameView depends on: TitleScreen, GameStateManager, EnhancedGameView
+- MainGameView depends on: TitleScreen, GameStateManager, CreatorScreen
 - TitleGridView depends on: TitleGrid (RealityKit Entity)
+- CreatorScreen depends on: TitleBackground, TitleGridView, GameMenuSystem
+- GameMenuSystem depends on: GameMenuTop, GameMenuCenter, GameMenuBottom
 - All components use cross-platform navigation macros
 
 ---
@@ -63,6 +72,8 @@ GameCore/
 - **GameStateManager.swift**: NavigationPath-based state management
 - **MainGameView.swift**: Root navigation with NavigationStack implementation
 - **MenuButton.swift**: Cross-platform button with modern sensory feedback
+- **CreatorScreen.swift**: Windowed game interface with centered overlay
+- **GameMenuSystem.swift**: Modular 3-box layout system
 - **Cross-platform navigation**: Conditional compilation for iOS/macOS/tvOS
 
 ### Key Features Implemented
@@ -71,6 +82,8 @@ GameCore/
 - Sliding panel system: main/settings/loadGame panels with asymmetric transitions
 - RealityKit integration: camera at [0,15,35] looking at [0,0,0] for action RPG perspective
 - Cross-platform navigation: iOS navigationBarHidden, macOS toolbar hidden, tvOS navigationBarHidden
+- Screen transitions: Fade to black transition between title and creator screens
+- Windowed interface: GameMenuSystem overlays on background with constrained sizing
 
 ### Animation System Implementation
 ```swift
@@ -78,6 +91,9 @@ GameCore/
 titleOffset: starts at 0, animates to -20 after 2 second delay
 panelTransitions: uses .asymmetric with .move(edge: .trailing/.leading) + .opacity
 slideToPanel(): withAnimation(.easeInOut(duration: 0.6))
+
+// Screen transition implementation in MainGameView
+startNewGame(): Quick button fade (0.2s) -> black transition (0.3s) -> navigate to CreatorScreen
 ```
 
 ### Component Integration Pattern
@@ -87,6 +103,16 @@ ZStack {
     TitleBackground()    // Gradient component (no dependencies)
     TitleGridView()      // RealityKit component (depends on TitleGrid)
     // UI layer here
+}
+
+// CreatorScreen windowed layout
+ZStack {
+    TitleBackground()    // Full screen background
+    TitleGridView()      // Full screen 3D grid
+    GameMenuSystem()     // Centered overlay (800x600)
+        .background(Color.black.opacity(0.8))
+        .cornerRadius(12)
+        .shadow(...)
 }
 ```
 
@@ -114,6 +140,55 @@ ZStack {
 - Billboard text for readability
 - Unlit materials for performance
 - Platform-optimized font loading
+
+---
+
+## **CRITICAL ISSUES - REALITYKIT MEMORY LEAKS & CRASHES**
+
+### **Known Problems**
+- **macOS Freeze**: App locks up and requires force quit shortly after CreatorScreen loads
+- **Memory Leak**: RealityKit entities not properly deallocated when views switch
+- **Performance Degradation**: Multiple grid instances accumulate in memory
+- **Navigation Issues**: Sometimes appears to go back to splash screen instead of forward
+
+### **Root Cause Analysis**
+- **RealityKit Memory Management**: Known issue with ARView/RealityView not properly deallocating
+- **Entity Accumulation**: TitleGrid.makeGridEntity() creates ~400+ entities (lines + labels + base plane)
+- **No Cleanup**: No proper entity removal when views disappear
+- **Multiple Instances**: Grid recreated on each view appearance without cleanup
+
+### **Attempted Solutions (DO NOT REPEAT)**
+- ❌ **Entity state management**: Caused grid to disappear
+- ❌ **onDisappear cleanup**: Still leaked memory
+- ❌ **SwiftUI Canvas replacement**: Not what was requested
+- ❌ **Reduced grid complexity**: Changed original design intent
+- ❌ **Conditional grid loading**: Added unnecessary complexity
+
+### **Current Workarounds**
+- Grid works perfectly on TitleScreen
+- Issue only occurs when transitioning to CreatorScreen
+- Problem likely related to multiple RealityKit instances running simultaneously
+
+### **Technical Details**
+```swift
+// Current TitleGrid implementation (CAUSES CRASHES)
+- 100x100 grid (10,000 lines)
+- ~200 text labels with billboard components
+- 1 base plane
+- 3 axis markers
+- Total: ~400+ RealityKit entities per grid instance
+
+// Memory leak pattern:
+TitleScreen (Grid Instance 1) -> CreatorScreen (Grid Instance 2) -> CRASH
+```
+
+### **DO NOT ATTEMPT**
+- Do not modify TitleGrid.swift without explicit instructions
+- Do not add entity cleanup code
+- Do not replace RealityKit with SwiftUI Canvas
+- Do not reduce grid complexity
+- Do not add state management to TitleGridView
+- Do not create fallback grid systems
 
 ---
 
@@ -150,7 +225,7 @@ Uses platform-specific color types:
 @Observable class GameStateManager {
     var navigationPath: NavigationPath = NavigationPath()
     
-    func navigateToGame() // Pushes .game destination
+    func navigateToGame() // Pushes .game destination -> CreatorScreen
     func navigateToSettings() // Pushes .settings destination  
     func navigateToLoadGame() // Pushes .loadGame destination
     func navigateBack() // Pops current destination
@@ -180,6 +255,8 @@ Each component is completely self-contained:
 - TitleBackground: Just gradient, no dependencies
 - TitleGridView: Just 3D grid, no dependencies  
 - TitleScreen: Combines background + grid + UI, but through composition
+- CreatorScreen: Combines background + grid + GameMenuSystem overlay
+- GameMenuSystem: Combines GameMenuTop + GameMenuCenter + GameMenuBottom
 - No component has knowledge of others' internal state
 
 ### Integration Example
@@ -192,7 +269,7 @@ ZStack {
 ```
 
 ### Extension Points
-- onNewGame: () -> Void callback for game launch
+- onNewGame: () -> Void callback for game launch -> triggers transition to CreatorScreen
 - onCredits: () -> Void callback for credits display
 - Panel actions: Print statements ready for implementation
 - Settings panels: Placeholder implementations ready for logic
@@ -206,6 +283,7 @@ ZStack {
 - 0.6 second duration for panel slides
 - Asymmetric transitions (right-in, left-out)
 - easeInOut timing curves
+- Quick screen transitions (0.2s fade + 0.3s black)
 
 ### Code Organization
 - Platform checks at view level, not component level
@@ -229,6 +307,13 @@ ZStack {
 3. After 2 seconds, title slides up 20 points
 4. After 2.4 seconds, buttons slide in from right
 5. User interactions trigger panel transitions
+
+### New Game Flow
+1. "New Game" button clicked
+2. Buttons fade out (0.2s)
+3. Black screen transition (0.3s)
+4. Navigate to CreatorScreen
+5. **CRASH OCCURS** shortly after CreatorScreen loads
 
 ### Button Layout Implementation
 Uses Group views with conditional content rendering:
@@ -259,14 +344,16 @@ camera.look(at: [0, 0, 0], from: camera.transform.translation, relativeTo: nil)
 ### Relationship to Other Components
 - **RealityAssets**: Provides file management, GameCore provides UI framework
 - **RealitySyntax**: Provides code editing, GameCore provides game menus
-- **Game Engine** (future): Will integrate through MainGameView navigation
+- **Game Engine** (future): Will integrate through CreatorScreen GameMenuSystem
 
 ### Data Flow
 MainGameView -> GameStateManager -> NavigationStack -> TitleScreen -> Panel System
-TitleScreen manages internal panel state separately from navigation state
+MainGameView -> GameStateManager -> NavigationStack -> CreatorScreen -> GameMenuSystem
 
 ### Extension Points for Game Integration
-- EnhancedGameView: Wrapper for actual game content
+- GameMenuCenter: Primary content area for actual game creation tools
+- GameMenuTop: Toolbar for game creation actions
+- GameMenuBottom: Status bar and navigation
 - GameStateManager: Ready for game state integration
 - Save/Load panels: Ready for actual save system integration
 - Settings panels: Ready for actual settings implementation
@@ -301,6 +388,7 @@ Use conditional compilation at view level:
 - Lazy loading patterns for complex components
 - Minimal state management for smooth animations
 - Platform-appropriate animation curves
+- **CRITICAL**: Multiple RealityKit instances cause memory leaks and crashes
 
 ---
 
@@ -318,29 +406,39 @@ Use conditional compilation at view level:
 2. Verify camera angle shows grid properly
 3. Check platform-specific color compilation
 4. Test grid performance on target devices
+5. **CRITICAL**: Monitor memory usage when transitioning between screens
 
 ### Adding Custom Game Content
-Replace EnhancedGameView placeholder with actual game content while maintaining:
+Replace GameMenuCenter placeholder with actual game content while maintaining:
 - MenuButton for navigation back
 - Platform-specific navigation hiding
 - Consistent visual design
+- Windowed overlay approach
 
 ---
 
 ## Current Limitations
 
+### Critical Issues
+- **RealityKit Memory Leaks**: Multiple grid instances cause crashes on macOS
+- **Navigation Instability**: Transition from TitleScreen to CreatorScreen problematic
+- **Performance Degradation**: App becomes unresponsive after CreatorScreen loads
+
 ### Not Yet Implemented
 - Actual save/load functionality (UI structure ready)
 - Settings persistence (UI structure ready)  
 - Credits system (callback ready)
-- Game content integration (wrapper ready)
+- Game content integration (GameMenuCenter ready)
 - Audio system integration
 - Input system integration
+- **RealityKit memory management solution**
 
 ### Placeholder Components
+- GameMenuTop: Has basic structure, needs actual toolbar functionality
+- GameMenuCenter: Has basic structure, needs actual game creation tools
+- GameMenuBottom: Has basic structure, needs actual status/navigation
 - GameSettingsView: Has button structure, needs actual settings logic
 - GameLoadView: Has slot structure, needs actual save system
-- EnhancedGameView: Has wrapper structure, needs actual game content
 
 ### Extension Opportunities
 - Theme system for different visual styles
@@ -348,7 +446,8 @@ Replace EnhancedGameView placeholder with actual game content while maintaining:
 - More complex panel layouts
 - Custom button styles
 - Extended 3D background options
+- **Alternative grid implementation to avoid RealityKit issues**
 
 ---
 
-*This document reflects the actual current state as of January 2025. The core UI framework is complete and ready for game content integration and save/settings system implementation.*
+*This document reflects the actual current state as of January 2025. The core UI framework is complete but has critical RealityKit memory management issues that cause crashes on macOS when transitioning to CreatorScreen.*
