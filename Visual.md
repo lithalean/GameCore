@@ -1,309 +1,407 @@
 # GameCore Visual Design Context
 
+**Purpose**: Complete visual design system and UI specifications  
+**Version**: 2.0  
 **Design Language**: Liquid Glass WWDC 2025  
-**Target Platforms**: iOS 26, macOS 26, tvOS 26  
-**Last Updated**: January 2025
+**Last Updated**: 2025-01-27
 
-## Design System Overview
+## Visual Hierarchy Diagram
 
-### Liquid Glass Material Properties
-- **Translucent materials** that reflect and refract surrounding content
-- **Dynamic opacity** adapting to content density and environment
-- **Real-time rendering** with hardware-accelerated glass effects
-- **Contextual adaptation** for light/dark modes and wallpaper colors
-- **Layered depth** with controls floating above content
-
-### Visual Hierarchy
 ```
-Z-Layer Stack (back to front):
-0. TitleBackground     - Gradient base layer
-1. TitleScreenView     - 3D ChunkGrid overlay
-2. Glass Containers    - Semi-transparent panels
-3. Interactive Elements - Buttons and controls
-4. Transitions         - Black fade overlays
+Z-LAYERS (back→front):
+├─[0] TitleBackground      █░░░░░░░░░ (Gradient base)
+├─[1] TitleScreenView      ░█░░░░░░░░ (3D ChunkGrid)
+├─[2] Glass Containers     ░░█░░░░░░░ (Panels/overlays)
+├─[3] Interactive Elements ░░░█░░░░░░ (Buttons/controls)
+└─[4] Transitions         ░░░░█░░░░░ (Black overlays)
+
+VISUAL_WEIGHT:
+Background: 10% opacity
+Grid: 30% opacity  
+Glass: 40-80% opacity
+Controls: 95% opacity
+Overlays: 80% opacity
 ```
 
-## Color System
+## Quick Reference Tables
 
-### Primary Palette
+### Color Palette
+| Element | Light Mode | Dark Mode | Opacity | Hex |
+|---------|------------|-----------|---------|-----|
+| **Background Start** | Black | Black | 1.0 | #000000 |
+| **Background End** | Blue | Purple | 0.3 | #0000FF / #800080 |
+| **Game Overlay** | Black | Black | 0.8 | #000000 |
+| **Grid Lines** | White | White | 1.0 | #FFFFFF |
+| **Grid Minor** | Gray | Gray | 0.3 | #808080 |
+| **Chunk Borders** | Red | Red | 1.0 | #FF0000 |
+| **Text Primary** | Primary | Primary | 0.95 | System |
+| **Text Secondary** | Secondary | Secondary | 0.8 | System |
+
+### Spacing System
+| Token | Value | Usage | Touch Safe |
+|-------|-------|-------|------------|
+| **tight** | 4pt | Micro spacing | ❌ |
+| **small** | 8pt | Internal padding | ❌ |
+| **medium** | 16pt | Component spacing | ❌ |
+| **large** | 24pt | Section gaps | ❌ |
+| **xl** | 32pt | Screen padding | ✅ |
+| **xxl** | 48pt | Major sections | ✅ |
+| **touch** | 44pt | Min touch target | ✅ |
+| **button** | 56pt | Standard button | ✅ |
+| **tv** | 80pt | tvOS focus target | ✅ |
+
+### Typography Scale
+| Style | Size | Weight | Design | Line Height |
+|-------|------|--------|--------|-------------|
+| **Title** | 28pt | Bold | Rounded | 34pt |
+| **Header** | 20pt | Semibold | Rounded | 24pt |
+| **Body** | 16pt | Medium | Default | 20pt |
+| **Button** | 18pt | Medium | Rounded | 22pt |
+| **Caption** | 12pt | Regular | Default | 16pt |
+
+## Platform Difference Matrix
+
+| Feature | iOS | macOS | tvOS |
+|---------|-----|-------|------|
+| **Nav Bar** | Hidden | Hidden toolbar | Hidden |
+| **Touch Target** | 44pt min | 44pt min | 80pt min |
+| **Hover Effects** | ❌ | ✅ +5% brightness | ❌ |
+| **Focus Effects** | ❌ | 2pt blue outline | 8pt white glow |
+| **Haptics** | ✅ Selection | ❌ | ❌ |
+| **Safe Areas** | ✅ Required | ❌ | ✅ TV safe |
+| **Shadows** | Standard | Enhanced depth | Reduced |
+| **Blur Radius** | 12pt | 16pt | 8pt |
+| **Animation Boost** | 1.0x | 1.0x | 1.5x |
+
+## Animation Timing Reference
+
+```yaml
+# Core Timings
+INSTANT: 0
+QUICK: 200ms
+STANDARD: 300ms  
+SMOOTH: 500ms
+EXTENDED: 800ms
+
+# Specific Animations
+title_slide:
+  delay: 2000ms
+  duration: 800ms
+  curve: easeOut
+  
+button_reveal:
+  delay: 2400ms
+  duration: 600ms
+  curve: easeIn
+  
+panel_transition:
+  duration: 600ms
+  curve: easeInOut
+  asymmetric: true
+  
+screen_fade:
+  out: 200ms
+  black: 300ms
+  total: 500ms
+```
+
+## Glass Material Specifications
+
+### Material Hierarchy
+```yaml
+ULTRA_THIN:
+  opacity: 0.1
+  blur: 4pt
+  use: "Subtle overlays"
+  
+THIN:
+  opacity: 0.2
+  blur: 8pt
+  use: "Standard controls"
+  
+MEDIUM:
+  opacity: 0.3
+  blur: 12pt
+  use: "Prominent panels"
+  
+THICK:
+  opacity: 0.4
+  blur: 16pt
+  use: "Modal overlays"
+  
+GAME_OVERLAY:
+  opacity: 0.8
+  blur: 20pt
+  use: "CreatorScreen"
+```
+
+### Platform Glass Rendering
 ```swift
-// Background gradients
-gradientStart: Color.black
-gradientEnd: Color.blue.opacity(0.3) / Color.purple.opacity(0.3)
+// iOS Implementation
+.background(.ultraThinMaterial)
+.background(Color.black.opacity(0.3))
 
-// Glass overlays
-gameOverlay: Color.black.opacity(0.8)  // CreatorScreen
-panelGlass: Color(.systemMaterial)     // Platform adaptive
+// macOS Implementation  
+.background(.underPageBackgroundMaterial)
+.background(Color.black.opacity(0.35))
 
-// Text on glass
-primaryText: Color.primary.opacity(0.95)
-secondaryText: Color.secondary.opacity(0.8)
+// tvOS Implementation
+.background(Color.black.opacity(0.4))
+.blur(radius: 8)
 ```
-
-### Platform-Specific Colors
-- **iOS**: UIColor system colors
-- **macOS**: NSColor with desktop adaptations
-- **tvOS**: Enhanced contrast for TV viewing
-
-### ChunkGrid Colors
-- **Grid Lines**: White (major), Gray 0.3 (minor)
-- **Chunk Borders**: Red (#FF0000)
-- **Origin Marker**: Yellow
-- **Axis Labels**: Red (X), Blue (Z)
-
-## Typography System
-
-### Font Hierarchy
-```swift
-// Titles and headers
-titleFont: .system(size: 28, weight: .bold, design: .rounded)
-headerFont: .system(size: 20, weight: .semibold, design: .rounded)
-
-// Body and controls
-bodyFont: .system(size: 16, weight: .medium, design: .default)
-buttonFont: .system(size: 18, weight: .medium, design: .rounded)
-captionFont: .system(size: 12, weight: .regular, design: .default)
-```
-
-### Text Rendering on Glass
-- 1pt text shadow with 0.3 opacity
-- Increased blur behind text areas (16pt minimum)
-- Automatic contrast adjustment based on background
-
-## Animation Specifications
-
-### Core Animation Timings
-```swift
-// Micro-interactions
-quickAnimation: 0.2s      // Button presses, fades
-standardAnimation: 0.3s   // Panel transitions, state changes
-slowAnimation: 0.5s       // Major layout changes
-extendedAnimation: 0.8s   // Title movements
-
-// Specific animations
-titleSlideDelay: 2.0s
-titleSlideDuration: 0.8s
-buttonSlideDelay: 2.4s
-panelTransitionDuration: 0.6s
-```
-
-### Animation Curves
-```swift
-// Standard curves
-.easeInOut(duration: 0.6)    // Panel sliding
-.easeOut(duration: 0.8)      // Title movement
-.spring(duration: 0.6, bounce: 0.2)  // Glass morphing
-
-// Transition patterns
-.asymmetric(
-    insertion: .move(edge: .trailing) + .opacity,
-    removal: .move(edge: .leading) + .opacity
-)
-```
-
-### Screen Transition Sequence
-1. Button fade out (0.2s easeOut)
-2. Black overlay fade in (0.3s easeInOut)
-3. Navigation trigger (at 0.5s total)
-4. New screen fade in
-
-## Layout System
-
-### 5-Track Layout Specifications
-```
-Track Heights:
-├── Track 1: 56pt (Primary action)
-├── Track 2: 56pt (Secondary action)
-├── Track 3: 56pt (Tertiary action)
-├── Track 4: 56pt (Spacer - visual breathing room)
-└── Track 5: 56pt (Navigation/Back)
-
-Total Height: 280pt + spacing
-```
-
-### Spacing Guidelines
-```swift
-struct SpacingConstants {
-    static let tight: CGFloat = 4      // Micro spacing
-    static let small: CGFloat = 8      // Internal padding
-    static let medium: CGFloat = 16    // Component spacing
-    static let large: CGFloat = 24     // Section gaps
-    static let xl: CGFloat = 32        // Screen padding
-    static let xxl: CGFloat = 48       // Major sections
-}
-```
-
-### Touch Targets
-- **iOS Minimum**: 44pt × 44pt
-- **GameCore Standard**: 56pt × 56pt  
-- **tvOS Focus**: 80pt × 80pt
 
 ## Component Visual Specifications
 
 ### TitleBackground
-```swift
-LinearGradient(
-    colors: [.black, .blue.opacity(0.3)],
-    startPoint: .topLeading,
-    endPoint: .bottomTrailing
-)
+```yaml
+type: LinearGradient
+colors: [black, blue.opacity(0.3)]
+startPoint: topLeading
+endPoint: bottomTrailing
+animation: none
+platform_variants: none
 ```
 
-### TitleButton Styles
-```swift
-// Primary (New Game, Start)
-.background(Color.blue)
-.foregroundColor(.white)
-
-// Secondary (Settings, Options)
-.background(Color.gray.opacity(0.3))
-.foregroundColor(.primary)
-
-// Standard (Save slots, menu items)
-.background(Color.clear)
-.overlay(RoundedRectangle(cornerRadius: 8)
-    .stroke(Color.gray.opacity(0.5)))
+### ChunkGrid Visual
+```yaml
+camera:
+  position: [0, 15, 35]
+  target: [0, 0, 0]
+  fov: actionRPG
+  
+grid:
+  size: 100x100
+  spacing: 1.0
+  line_width:
+    minor: 0.05
+    major: 0.1
+  colors:
+    grid: white
+    borders: red (#FF0000)
+    origin: yellow
+    x_axis: red
+    z_axis: blue
+    
+materials:
+  type: unlit
+  shadows: false
+  reflections: false
 ```
 
-### GameMenuSystem (Creator Overlay)
-```swift
-// Container specifications
-maxWidth: 800
-maxHeight: 600
-background: Color.black.opacity(0.8)
-cornerRadius: 12
-shadow: Shadow(color: .black.opacity(0.3), radius: 20, y: 10)
-
-// Component heights
-menuBarHeight: 60  // Top and bottom bars
+### Button Styles
+```yaml
+primary:  # New Game, Start
+  background: blue
+  foreground: white
+  cornerRadius: 8
+  padding: [16, 32]
+  shadow: standard
+  
+secondary:  # Settings, Options
+  background: gray.opacity(0.3)
+  foreground: primary
+  cornerRadius: 8
+  padding: [16, 32]
+  shadow: subtle
+  
+standard:  # Menu items
+  background: clear
+  foreground: primary
+  border: gray.opacity(0.5)
+  borderWidth: 1
+  cornerRadius: 8
+  padding: [12, 24]
 ```
 
-### ChunkGrid Visual Properties
-```swift
-// Camera perspective
-position: [0, 15, 35]
-lookAt: [0, 0, 0]
-fov: actionRPG perspective
+### 5-Track Layout
+```yaml
+track_height: 56pt
+track_spacing: 8pt
+total_height: 320pt
 
-// Grid rendering
-gridSize: 100 × 100
-spacing: 1.0 units
-lineWidth: 0.05 (minor), 0.1 (major)
-materials: unlit for performance
+tracks:
+  1: "Primary action"
+  2: "Secondary action"
+  3: "Tertiary action"
+  4: "Spacer (empty)"
+  5: "Navigation/Back"
+  
+alignment: center
+container_padding: 32pt
 ```
 
-## Material & Blur Specifications
+## Shadow Specifications
 
-### Glass Effect Hierarchy
-```swift
-enum GlassThickness {
-    case ultraThin    // 0.1 opacity - subtle overlay
-    case thin         // 0.2 opacity - standard controls
-    case medium       // 0.3 opacity - prominent panels
-    case thick        // 0.4 opacity - modal overlays
-    case gameOverlay  // 0.8 opacity - CreatorScreen
-}
+| Type | Color | Opacity | Radius | X | Y |
+|------|-------|---------|--------|---|---|
+| **Subtle** | Black | 0.1 | 4pt | 0 | 2pt |
+| **Standard** | Black | 0.15 | 8pt | 0 | 4pt |
+| **Prominent** | Black | 0.2 | 12pt | 0 | 6pt |
+| **Overlay** | Black | 0.3 | 20pt | 0 | 10pt |
+
+## State Visual Specifications
+
+### Interactive States
+```yaml
+default:
+  opacity: 1.0
+  scale: 1.0
+  brightness: 0
+  
+hover:  # macOS only
+  opacity: 1.0
+  scale: 1.0
+  brightness: +5%
+  
+pressed:
+  opacity: 0.9
+  scale: 0.98
+  brightness: -10%
+  
+disabled:
+  opacity: 0.5
+  scale: 1.0
+  brightness: 0
+  
+focused:  # tvOS/keyboard
+  opacity: 1.0
+  scale: 1.05
+  outline: 2pt
 ```
 
-### Blur Radius Values
-- **Subtle**: 8pt - Behind floating controls
-- **Standard**: 12pt - Panel backgrounds
-- **Prominent**: 16pt - Modal overlays
-- **Heavy**: 24pt - Content-blocking
-- **Game Overlay**: 20pt - CreatorScreen
-
-### Shadow Specifications
-```swift
-// Shadow hierarchy
-subtleShadow: (color: .black(0.1), radius: 4, y: 2)
-standardShadow: (color: .black(0.15), radius: 8, y: 4)
-prominentShadow: (color: .black(0.2), radius: 12, y: 6)
-overlayShadow: (color: .black(0.3), radius: 20, y: 10)
+### Loading States
+```yaml
+splash:
+  duration: 2000ms
+  fade_curve: easeOut
+  background: black
+  
+skeleton:
+  animation: pulse
+  duration: 1500ms
+  opacity: [0.3, 0.6]
+  
+transition:
+  overlay: black
+  opacity: 0.8
+  duration: 300ms
 ```
-
-## Platform Visual Adaptations
-
-### iOS 26 Specifics
-- Full Liquid Glass implementation
-- Motion-responsive translucency
-- Haptic feedback on interactions
-- Safe area glass extensions
-
-### macOS 26 Specifics
-- Transparent window chrome
-- 5% luminance increase on hover
-- 2pt blue outline for keyboard focus
-- Enhanced shadow depth
-
-### tvOS 26 Specifics
-- 8pt focus outline with contrast
-- Increased opacity for readability
-- Enhanced parallax depth
-- Larger UI elements (1.5x scale)
 
 ## Accessibility Adaptations
 
-### Reduce Transparency Mode
-- Glass materials → Solid backgrounds
-- Maintain color scheme
-- Preserve layout structure
-- Enhanced contrast ratios
-
-### High Contrast Mode
-- Increased text opacity (1.0)
-- Stronger borders (2pt)
-- Pure black/white options
-- Simplified gradients
-
-### Motion Sensitivity
-- Disable glass motion effects
-- Instant transitions (no animation)
-- Static backgrounds
-- Reduced parallax
-
-## Visual State Specifications
-
-### Loading States
-- Splash screen: 2s fade
-- Content loading: Skeleton screens
-- Transition states: Black overlay
-
-### Interactive States
-```swift
-// Button states
-default: baseColor
-hover: baseColor + 5% brightness (macOS)
-pressed: baseColor - 10% brightness
-disabled: baseColor + 50% opacity
-focused: 2pt outline (tvOS/keyboard)
+### Reduce Transparency
+```yaml
+changes:
+  glass_materials: → solid_backgrounds
+  blur_effects: → removed
+  shadows: → reduced_50%
+  overlays: → increased_opacity
+  
+maintains:
+  - layout_structure
+  - color_scheme
+  - animations
+  - typography
 ```
 
-### Error States
-- Red accent color
-- Shake animation (0.1s)
-- Error icon overlay
-- Temporary message (3s)
+### High Contrast
+```yaml
+changes:
+  text_opacity: → 1.0
+  borders: → 2pt_width
+  colors: → pure_black_white
+  gradients: → solid_colors
+  
+ratios:
+  text_on_background: 7:1
+  button_borders: 4.5:1
+  focus_indicators: 3:1
+```
 
-## Performance Visual Guidelines
+### Reduce Motion
+```yaml
+disabled:
+  - glass_motion_effects
+  - parallax_depth
+  - spring_animations
+  - extended_transitions
+  
+replaced_with:
+  - instant_transitions
+  - static_backgrounds
+  - simple_fades
+  - reduced_durations
+```
 
-### Optimization Priorities
-1. Maintain 60fps minimum
-2. Reduce overdraw with opaque backgrounds
-3. Batch similar visual elements
-4. Use Metal rendering when available
+## Performance Visual Settings
 
-### Quality Settings
-```swift
-enum VisualQuality {
-    case low      // No glass, basic shadows
-    case medium   // Simple glass, standard shadows  
-    case high     // Full glass, all effects
-    case ultra    // Enhanced glass, parallax
-}
+### Quality Presets
+```yaml
+LOW:
+  glass: false
+  shadows: basic
+  blur: false
+  animations: reduced
+  target_fps: 30
+  
+MEDIUM:
+  glass: simple
+  shadows: standard
+  blur: 8pt_max
+  animations: standard
+  target_fps: 60
+  
+HIGH:
+  glass: full
+  shadows: enhanced
+  blur: unlimited
+  animations: full
+  target_fps: 60
+  
+ULTRA:
+  glass: enhanced
+  shadows: raytraced
+  blur: enhanced
+  animations: physics
+  target_fps: 120
 ```
 
 ### Battery Optimization
-- Reduce glass complexity in low power
-- Disable non-essential animations
-- Lower shadow quality
-- Static backgrounds option
+```yaml
+low_power_mode:
+  reduce_glass: 50%
+  disable_animations: non_essential
+  lower_shadow_quality: true
+  static_backgrounds: true
+  reduce_fps: 30
+```
+
+## Visual Debug Overlay
+
+```yaml
+debug_info:
+  show_fps: true
+  show_memory: true
+  show_touches: true
+  show_focus: true
+  show_safe_areas: true
+  show_grid_lines: true
+  
+colors:
+  fps_good: green
+  fps_warning: yellow
+  fps_bad: red
+  touch_point: blue
+  focus_ring: purple
+  safe_area: orange
+```
+
+## Quick Visual Formulas
+
+```
+GLASS_OPACITY = base_opacity + (blur_radius / 100)
+SHADOW_SPREAD = radius * 0.5 + y_offset
+ANIMATION_FEEL = duration * curve_intensity
+TOUCH_TARGET = max(content_size, platform_minimum)
+CONTRAST_RATIO = (L1 + 0.05) / (L2 + 0.05)
+```

@@ -1,291 +1,419 @@
 # GameCore Navigation Context
 
+**Purpose**: Screen flow, user journeys, and state management  
+**Version**: 2.0  
 **Navigation Pattern**: NavigationPath with Floating Content  
-**State Management**: Observable GameStateManager  
-**Last Updated**: January 2025
+**Last Updated**: 2025-01-27
 
-## Navigation Architecture
+## Navigation State Machine
 
-### Screen Hierarchy
 ```
-Application Root
-├── SplashScreen (2s auto-dismiss)
-└── MainGameView
-    ├── Persistent Background Layer
-    │   ├── TitleBackground (always visible)
-    │   └── TitleScreenView (always visible)
-    │
-    └── Floating Content Layer
-        ├── TitleScreenContent
-        │   ├── MainPanel
-        │   ├── SettingsPanel
-        │   └── LoadGamePanel
-        ├── CreatorScreen
-        ├── SettingsScreen (future)
-        └── LoadGameScreen (future)
+STATES:
+┌─────────────┐     2s      ┌─────────────┐
+│   SPLASH    │────────────▶│    TITLE    │
+│  (loading)  │             │   (main)    │
+└─────────────┘             └──────┬──────┘
+                                   │
+                    ┌──────────────┼──────────────┐
+                    │              │              │
+                    ▼              ▼              ▼
+              ┌──────────┐  ┌──────────┐  ┌──────────┐
+              │ SETTINGS │  │   LOAD   │  │   GAME   │
+              │  PANEL   │  │  PANEL   │  │ CREATOR  │
+              └──────────┘  └──────────┘  └──────────┘
+
+TRANSITIONS:
+→ Forward: move(edge: .trailing) + opacity
+← Back: move(edge: .leading) + opacity  
+↓ Modal: fade + scale
+↑ Dismiss: fade + scale
 ```
 
-### Navigation Destinations
+## Navigation Quick Reference
+
+| From | To | Trigger | Duration | Type | Recovery |
+|------|-----|---------|----------|------|----------|
+| **Splash** | Title | Auto 2s | 300ms | Fade | N/A |
+| **Title** | Creator | New Game | 500ms | Black fade | Back |
+| **Title** | Settings | Settings btn | 600ms | Slide left | Back |
+| **Title** | Load | Continue btn | 600ms | Slide left | Back |
+| **Any** | Title | Back/Cancel | 300ms | Slide right | N/A |
+| **Any** | Error | Exception | Instant | None | Retry |
+
+## Navigation Stack Architecture
+
 ```swift
-enum GameDestination: Hashable {
-    case title      // Title screen (default)
-    case game       // Creator interface
-    case settings   // Global settings
-    case loadGame   // Save management
-}
+// NAVIGATION STATE
+NavigationPath: [GameDestination]
+├─ .title (root - never removed)
+├─ .game 
+├─ .settings
+└─ .loadGame
+
+// PANEL STATE (local to TitleScreen)
+PanelType: enum
+├─ .main (default)
+├─ .settings
+└─ .loadGame
+
+// RELATIONSHIP
+NavigationPath controls screens
+PanelType controls panels within TitleScreen
 ```
 
-## State Management
+## Error Recovery Patterns
 
-### GameStateManager
-```swift
-@Observable class GameStateManager {
-    // Core navigation state
-    var navigationPath = NavigationPath()
+### Navigation Failure Recovery
+```yaml
+scenario: "Invalid destination"
+detection: navigationDestination throws
+recovery:
+  1. Log error
+  2. Show alert (optional)
+  3. Pop to root (.title)
+  4. Reset navigation path
+code: |
+  do {
+    try navigate(to: destination)
+  } catch {
+    navigationPath.removeLast(navigationPath.count)
+    showError = true
+  }
+```
+
+### Transition Interruption Recovery
+```yaml
+scenario: "User navigates during animation"
+detection: Multiple navigation calls
+recovery:
+  1. Cancel current animation
+  2. Complete transition instantly
+  3. Start new navigation
+  4. No error shown
+code: |
+  withAnimation(.linear(duration: 0)) {
+    completeCurrentTransition()
+  }
+  startNewNavigation()
+```
+
+### Memory Pressure Recovery
+```yaml
+scenario: "Low memory during navigation"
+detection: didReceiveMemoryWarning
+recovery:
+  1. Cancel non-essential animations
+  2. Clear image caches
+  3. Complete navigation
+  4. Reduce quality if needed
+priority: Complete navigation > Visual quality
+```
+
+### Background/Foreground Recovery
+```yaml
+scenario: "App backgrounded during navigation"
+detection: scenePhase change
+recovery:
+  1. Save navigation state
+  2. On foreground: restore state
+  3. Skip animations
+  4. Show current screen
+state_preservation: |
+  @AppStorage("lastNavigation") 
+  var savedPath: Data = Data()
+```
+
+## User Journey Flows
+
+### First-Time User Flow
+```
+START
+  │
+  ▼
+[SPLASH: 2s]
+  │
+  ▼
+[TITLE: Center position]
+  │ (800ms delay)
+  ▼
+[TITLE: Slide up -20pt]
+  │ (400ms delay)
+  ▼
+[BUTTONS: Fade in]
+  │
+  ├─→ [NEW GAME] → [BLACK FADE] → [CREATOR]
+  ├─→ [SETTINGS] → [SLIDE PANEL] → [SETTINGS]
+  └─→ [CREDITS] → [FUTURE]
+```
+
+### Returning User Flow
+```
+START
+  │
+  ▼
+[SPLASH: 2s]
+  │
+  ▼
+[TITLE: Final position]
+  │
+  ├─→ [CONTINUE] → [LOAD PANEL] → [SELECT SLOT] → [CREATOR]
+  ├─→ [NEW GAME] → [CREATOR]
+  └─→ [SETTINGS] → [SETTINGS PANEL]
+```
+
+### Settings Management Flow
+```
+[MAIN PANEL]
+  │
+  ▼
+[SETTINGS BUTTON]
+  │ (600ms slide)
+  ▼
+[SETTINGS PANEL]
+  │
+  ├─→ [AUDIO] → [FUTURE: Audio settings]
+  ├─→ [GRAPHICS] → [FUTURE: Graphics settings]
+  ├─→ [CONTROLS] → [FUTURE: Control mapping]
+  └─→ [BACK] → (600ms slide) → [MAIN PANEL]
+```
+
+## Navigation Timing Specifications
+
+```yaml
+# Screen Transitions
+splash_duration: 2000ms
+splash_fade: 300ms
+
+title_animation_sequence:
+  title_slide_delay: 2000ms
+  title_slide_duration: 800ms
+  button_fade_delay: 2400ms
+  button_fade_duration: 600ms
+
+screen_transitions:
+  new_game_sequence:
+    button_fade_out: 200ms
+    black_overlay_delay: 200ms
+    black_overlay_duration: 300ms
+    total_before_navigation: 500ms
     
-    // Navigation methods
-    func navigateToGame()      // -> CreatorScreen
-    func navigateToSettings()  // -> SettingsScreen
-    func navigateToLoadGame()  // -> LoadGameScreen
-    func navigateBack()        // Pop current screen
-}
+  panel_slide:
+    duration: 600ms
+    curve: easeInOut
+    overlap: 0ms  # No overlap
+
+  back_navigation:
+    duration: 300ms
+    curve: easeOut
 ```
 
-### Panel State Management
+## Platform Navigation Adaptations
+
+### iOS Navigation
 ```swift
-// Internal to TitleScreen
-enum PanelType {
-    case main      // New Game, Continue, Settings, Credits
-    case settings  // Audio, Graphics, Controls, Back
-    case loadGame  // Slot 1, Slot 2, Slot 3, Back
-}
-
-// Managed locally within TitleScreen
-@State private var currentPanel: PanelType = .main
-```
-
-## Navigation Flow Patterns
-
-### Application Launch
-```
-1. App Start
-   └── SplashScreen (2s)
-       └── Fade transition
-           └── MainGameView
-               └── TitleScreenContent (default)
-```
-
-### Title Screen Navigation
-```
-TitleScreenContent (Main Panel)
-├── New Game → Black transition → CreatorScreen
-├── Continue → LoadGamePanel (slide animation)
-├── Settings → SettingsPanel (slide animation)
-└── Credits → Print action (future implementation)
-
-Settings Panel
-├── Audio Settings → Print action
-├── Graphics Settings → Print action
-├── Controls → Print action
-└── Back to Main → MainPanel (slide animation)
-
-Load Game Panel
-├── Slot 1-3 → Print action
-└── Back to Main → MainPanel (slide animation)
-```
-
-### Screen Transition Patterns
-
-#### New Game Transition
-```swift
-Timeline:
-0.0s: User taps "New Game"
-0.2s: Buttons fade out (opacity 1.0 → 0.0)
-0.2s: Black overlay begins fade in
-0.5s: Navigation triggered
-0.6s: CreatorScreen appears over persistent background
-```
-
-#### Panel Slide Transitions
-```swift
-Duration: 0.6s
-Animation: .easeInOut
-Direction: 
-  - Forward: .move(edge: .trailing) + .opacity
-  - Back: .move(edge: .leading) + .opacity
-```
-
-## Navigation Rules
-
-### Persistent Background Rules
-1. Background layers NEVER animate or change
-2. Background created once at app launch
-3. Background visible through all floating content
-4. No navigation affects background state
-
-### Floating Content Rules
-1. Only one floating screen active at a time
-2. Transitions animate floating layer only
-3. All screens respect persistent background
-4. Navigation managed by GameStateManager
-
-### Platform-Specific Navigation
-```swift
-// iOS Navigation
+// Hide system navigation
 .navigationBarHidden(true)
 .statusBarHidden(showSplash)
 
-// macOS Navigation  
+// Gesture support
+.gesture(
+    DragGesture()
+        .onEnded { value in
+            if value.translation.width > 50 {
+                navigateBack()
+            }
+        }
+)
+```
+
+### macOS Navigation
+```swift
+// Window chrome
 .toolbar(.hidden, for: .windowToolbar)
 .frame(minWidth: 1024, minHeight: 768)
 
-// tvOS Navigation
-.navigationBarHidden(true)
-.ignoresSafeArea(.all)
-```
+// Keyboard shortcuts
+.keyboardShortcut(.escape) { navigateBack() }
+.keyboardShortcut(.return) { confirmAction() }
 
-## User Journey Maps
-
-### First-Time User
-```
-1. Launch → Splash (2s)
-2. Title appears centered
-3. Title slides up (-20pt)
-4. Buttons slide in from right
-5. User explores panels
-6. Selects "New Game"
-7. Transition to Creator
-```
-
-### Returning User
-```
-1. Launch → Splash (2s)
-2. Skip to button state
-3. Select "Continue" 
-4. Load Game panel slides in
-5. Select save slot
-6. Load into Creator with saved state
-```
-
-### Settings Flow
-```
-1. From Main → Settings button
-2. Settings panel slides in
-3. Adjust preferences
-4. Back to Main
-5. Settings applied globally
-```
-
-## Navigation State Preservation
-
-### Current Implementation
-- Navigation path persisted during session
-- Panel states reset on screen change
-- No deep linking support yet
-
-### Future Enhancements
-```swift
-// Planned state preservation
-struct NavigationState: Codable {
-    let currentScreen: GameDestination
-    let panelState: PanelType?
-    let savedGameSlot: Int?
-    let timestamp: Date
+// Mouse support
+.onHover { hovering in
+    // Visual feedback
 }
 ```
 
-## Transition Specifications
-
-### Screen-Level Transitions
-| From | To | Duration | Type |
-|------|-----|----------|------|
-| Splash | Title | 0.3s | Fade |
-| Title | Creator | 0.5s | Fade + Black |
-| Any | Previous | 0.3s | Slide |
-
-### Panel-Level Transitions
-| From | To | Duration | Type |
-|------|-----|----------|------|
-| Main | Settings | 0.6s | Slide left |
-| Main | LoadGame | 0.6s | Slide left |
-| Settings | Main | 0.6s | Slide right |
-| LoadGame | Main | 0.6s | Slide right |
-
-## Error Handling
-
-### Navigation Failures
+### tvOS Navigation
 ```swift
-// Graceful fallback pattern
-do {
-    try navigateToDestination()
-} catch {
-    // Return to safe state (Title)
-    navigationPath.removeLast(navigationPath.count)
+// Focus engine
+.focusable()
+.focused($focusedButton)
+.focusEffect()
+
+// Remote gestures
+.onMoveCommand { direction in
+    switch direction {
+    case .left: navigateBack()
+    case .right: navigateForward()
+    default: break
+    }
 }
 ```
 
-### Invalid States
-- Empty navigation path → Show Title
-- Unknown destination → Show Title
-- Transition interrupted → Complete transition
+## Navigation State Validation
 
-## Keyboard Navigation (macOS/tvOS)
+```yaml
+valid_states:
+  navigation_path:
+    - []  # Root (shows title)
+    - [.game]
+    - [.settings]
+    - [.loadGame]
+    
+  panel_state:
+    - .main
+    - .settings
+    - .loadGame
+
+invalid_states:
+  - Multiple same destinations
+  - Empty path with non-title screen
+  - Panel state without title screen
+  
+validation_rules:
+  - Title screen always available
+  - Only one modal at a time
+  - Panels only on title screen
+  - Back always goes to previous
+```
+
+## Deep Linking Structure
+
+```yaml
+# FUTURE IMPLEMENTATION
+url_scheme: "gamecore://"
+
+routes:
+  home: "gamecore://home"
+  game: "gamecore://game"
+  new_game: "gamecore://game/new"
+  load_game: "gamecore://game/load?slot={1-3}"
+  settings: "gamecore://settings"
+  settings_audio: "gamecore://settings/audio"
+  
+parsing: |
+  func handleDeepLink(_ url: URL) {
+    guard let components = URLComponents(url: url) else { return }
+    
+    switch components.path {
+    case "/game/new":
+      navigateToNewGame()
+    case "/game/load":
+      if let slot = components.queryItems?["slot"] {
+        loadGame(slot: slot)
+      }
+    default:
+      navigateToTitle()
+    }
+  }
+```
+
+## Navigation Performance
+
+```yaml
+metrics:
+  average_transition_time: 485ms
+  navigation_memory_spike: 10MB
+  animation_fps: 60
+  gesture_response: <50ms
+  
+bottlenecks:
+  - Complex view initialization
+  - Large image loading
+  - Animation calculations
+  
+optimizations:
+  - Preload adjacent screens
+  - Cancel interrupted animations
+  - Lazy load heavy content
+  - Cache navigation destinations
+```
+
+## Keyboard & Focus Navigation
 
 ### Key Bindings
-- **Escape**: Navigate back / Close panel
-- **Enter**: Confirm selection
-- **Tab**: Next focusable element
-- **Arrow Keys**: Navigate between buttons
+| Key | Action | Context | Platform |
+|-----|--------|---------|----------|
+| **Escape** | Navigate back | Any | macOS/tvOS |
+| **Enter** | Confirm | Focused | All |
+| **Space** | Activate | Button | macOS |
+| **Tab** | Next focus | Any | macOS |
+| **Arrows** | Move focus | Grid | tvOS |
+| **Play/Pause** | Toggle | Media | tvOS |
 
-### Focus Management
-```swift
-// tvOS focus guide
-.focusable()
-.focusEffect()
-.focused($focusedButton)
+### Focus Order
+```
+Title Screen:
+1. New Game
+2. Continue  
+3. Settings
+4. Credits
 
-// macOS keyboard navigation
-.keyboardShortcut(.return, modifiers: [])
-.keyboardShortcut(.escape, modifiers: [])
+Settings Panel:
+1. Audio Settings
+2. Graphics Settings
+3. Controls
+4. Back
+
+Load Panel:
+1. Slot 1
+2. Slot 2
+3. Slot 3
+4. Back
 ```
 
-## Deep Linking Structure (Future)
+## Navigation Testing Matrix
 
-### Planned URL Scheme
+### Test Scenarios
+```yaml
+rapid_navigation:
+  description: "Quickly tap between all panels"
+  expected: "Smooth transitions, no crashes"
+  edge_cases:
+    - Double tap
+    - Triple tap
+    - Opposite directions
+    
+interrupt_transition:
+  description: "Navigate during animation"
+  expected: "Complete current, start new"
+  edge_cases:
+    - Same destination
+    - Back during forward
+    - Multiple interrupts
+    
+memory_pressure:
+  description: "Navigate with low memory"
+  expected: "Complete navigation, reduce quality"
+  edge_cases:
+    - During transition
+    - Multiple screens
+    - With background tasks
+    
+state_restoration:
+  description: "Kill app during navigation"
+  expected: "Restore to safe state"
+  edge_cases:
+    - Mid-animation
+    - Modal present
+    - Deep navigation
 ```
-gamecore://navigate/[destination]
-├── gamecore://navigate/title
-├── gamecore://navigate/game
-├── gamecore://navigate/settings
-└── gamecore://navigate/load?slot=1
+
+## Navigation Quick Formulas
+
 ```
-
-## Performance Considerations
-
-### Navigation Optimization
-- Lazy loading of destination views
-- Preload adjacent panels for smooth slides
-- Cancel animations if interrupted
-- Minimal state during transitions
-
-### Memory Management
-- Previous screens not retained
-- Only active panel content in memory
-- Persistent background shared instance
-- Navigation path lightweight storage
-
-## Testing Scenarios
-
-### Navigation Test Cases
-1. **Rapid Navigation**: Quickly tap between panels
-2. **Interrupt Transitions**: Navigate during animation
-3. **Deep Stack**: Navigate through all screens
-4. **Memory Pressure**: Navigate under low memory
-5. **Background/Foreground**: Navigation state preservation
-6. **Platform Switching**: Test all platforms
-
-### Edge Cases
-- Double-tap navigation buttons
-- Navigate during screen transition
-- Force quit during navigation
-- Network loss during future online features
+TRANSITION_TOTAL = fade_out + delay + fade_in
+PANEL_POSITION = currentPanel.rawValue * screenWidth
+GESTURE_THRESHOLD = screenWidth * 0.3
+FOCUS_DISTANCE = abs(currentFocus - targetFocus)
+PRELOAD_DEPTH = min(2, availableMemory / 50MB)
+```

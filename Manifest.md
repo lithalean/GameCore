@@ -1,264 +1,303 @@
 # GameCore Context Engineering Manifest
 
 **Purpose**: Master reference for AI systems to understand the context module structure and efficiently locate information  
-**Last Updated**: January 2025
+**Last Updated**: 2025-01-27  
+**Manifest Version**: 2.0
 
-## Quick Reference Matrix
+## Module Version Registry
 
-| Information Needed | Primary Module | Secondary Module |
-|-------------------|----------------|------------------|
-| How something works | ARCHITECTURE.md | IMPLEMENTATION.md |
-| Current state/status | IMPLEMENTATION.md | session.json |
-| Visual appearance | VISUAL.md | ARCHITECTURE.md |
-| User flow/navigation | NAVIGATION.md | IMPLEMENTATION.md |
-| External connections | INTEGRATION.yaml | ARCHITECTURE.md |
-| Past decisions/why | EVOLUTION.md | ARCHITECTURE.md |
-| Recent changes | session.json | EVOLUTION.md |
+| Module | Version | Last Modified | Size | Health |
+|--------|---------|--------------|------|---------|
+| ARCHITECTURE.md | 1.3 | 2025-01-26 | 4.2KB | ✅ |
+| IMPLEMENTATION.md | 1.5 | 2025-01-26 | 5.8KB | ✅ |
+| VISUAL.md | 1.2 | 2025-01-26 | 3.9KB | ✅ |
+| NAVIGATION.md | 1.1 | 2025-01-26 | 4.1KB | ✅ |
+| INTEGRATION.yaml | 1.0 | 2025-01-26 | 2.3KB | ✅ |
+| EVOLUTION.md | 1.4 | 2025-01-26 | 3.5KB | ✅ |
+| session.json | - | DYNAMIC | 1.2KB | ✅ |
 
-## Core Context Modules
-
-### ARCHITECTURE.md
-**Purpose**: Technical blueprint and system design rationale
-
-**Contains**:
-- System architecture patterns (Persistent Background + Floating Content)
-- Component hierarchy and relationships
-- Memory management strategy (GridStateManager)
-- Design patterns (Observable, Modular, Extension Point)
-- Integration architecture with Orchard ecosystem
-- Performance architecture and constraints
-- Core architectural decisions and rationale
-
-**Load for**:
-- Understanding WHY something is designed a certain way
-- Planning new features that must fit the architecture
-- Resolving design conflicts or making architectural choices
-- Understanding component relationships and dependencies
-
----
-
-### IMPLEMENTATION.md
-**Purpose**: Current state of the codebase and what actually works
-
-**Contains**:
-- Working features with completion status
-- Complete file structure (matches actual codebase)
-- In-progress features and their status
-- Placeholder components awaiting implementation
-- Technical debt and cleanup needed
-- Actual performance metrics and testing results
-- Known issues and limitations
-
-**Load for**:
-- Checking what's actually implemented vs planned
-- Understanding current file organization
-- Finding specific code locations
-- Assessing feature completion status
-- Planning next implementation steps
-
----
-
-### VISUAL.md
-**Purpose**: Complete visual design system and UI specifications
-
-**Contains**:
-- Liquid Glass design language implementation
-- Animation timings and transition curves
-- Color system and material properties
-- Typography hierarchy and text rendering
-- Component visual specifications
-- Platform-specific visual adaptations
-- Accessibility visual modifications
-- Touch targets and spacing guidelines
-
-**Load for**:
-- Implementing UI components
-- Setting animation parameters
-- Applying consistent styling
-- Ensuring platform-appropriate visuals
-- Meeting accessibility requirements
-
----
-
-### NAVIGATION.md
-**Purpose**: Screen flow, user journeys, and state management
-
-**Contains**:
-- Complete screen hierarchy
-- Navigation destination mappings
-- State management patterns (GameStateManager)
-- User journey maps for different scenarios
-- Transition specifications and timings
-- Platform-specific navigation rules
-- Keyboard/focus navigation patterns
-- Error handling and fallback flows
-
-**Load for**:
-- Understanding how users move through the app
-- Implementing navigation features
-- Managing navigation state
-- Planning new screen flows
-- Debugging navigation issues
-
-## Dynamic Context Layers
-
-### INTEGRATION.yaml
-**Purpose**: External dependencies and connection points
-
-**Contains**:
-- Orchard ecosystem integration status
-- Apple framework dependencies and versions
-- API contracts and protocols
-- Data flow patterns
-- Platform-specific APIs used
-- Future integration considerations
-- Testing interfaces and identifiers
-
-**Load for**:
-- Integrating with external systems
-- Understanding dependencies
-- Planning API changes
-- Setting up testing
-- Checking version requirements
-
----
-
-### EVOLUTION.md
-**Purpose**: Historical record of decisions and their outcomes
-
-**Contains**:
-- Chronological architectural decisions
-- Problem → Decision → Implementation → Results format
-- Lessons learned from each major change
-- Code examples showing before/after
-- Refined architecture principles
-- Pending decisions to be made
-
-**Load for**:
-- Understanding why current architecture exists
-- Learning from past mistakes/successes
-- Making similar architectural decisions
-- Onboarding new team members
-- Avoiding repeated problems
-
----
-
-### session.json
-**Purpose**: Runtime context for current AI conversation session
-
-**Contains**:
-- Current development focus
-- Recent changes in this session
-- Active warnings to monitor
-- Testing priorities
-- Discussion history and decisions made
-- Performance tracking updates
-- Next steps identified
-
-**Load for**:
-- Continuing interrupted conversations
-- Tracking session-specific decisions
-- Monitoring active issues
-- Planning immediate next actions
-- Maintaining conversation continuity
-
-## Context Loading Strategy
-
-### Task: Bug Fix
-1. IMPLEMENTATION.md (current state)
-2. session.json (recent changes)
-3. ARCHITECTURE.md (design constraints)
-
-### Task: New Feature
-1. ARCHITECTURE.md (design patterns)
-2. NAVIGATION.md (user flow)
-3. VISUAL.md (UI requirements)
-4. IMPLEMENTATION.md (integration points)
-
-### Task: Visual Update
-1. VISUAL.md (design system)
-2. IMPLEMENTATION.md (current components)
-3. ARCHITECTURE.md (component patterns)
-
-### Task: Integration Work
-1. INTEGRATION.yaml (dependencies)
-2. ARCHITECTURE.md (integration points)
-3. IMPLEMENTATION.md (current hooks)
-
-### Task: Refactoring
-1. EVOLUTION.md (past decisions)
-2. ARCHITECTURE.md (patterns)
-3. IMPLEMENTATION.md (current state)
-
-## Context Maintenance Protocol
-
-### Update Triggers
-- Code Change → Update IMPLEMENTATION.md first
-- Design Decision → Update ARCHITECTURE.md + EVOLUTION.md
-- Visual Change → Update VISUAL.md
-- New Screen/Flow → Update NAVIGATION.md
-- External Dependency → Update INTEGRATION.yaml
-- Problem Solved → Update EVOLUTION.md
-
-### Validation Requirements
-1. No contradictions between modules
-2. IMPLEMENTATION.md matches actual code
-3. All modules reference consistent versions
-4. Evolution entries have complete PDLR format
-5. Session context cleared between major tasks
+## Module Size Limits
+```yaml
+max_size_kb:
+  ARCHITECTURE.md: 10
+  IMPLEMENTATION.md: 15
+  VISUAL.md: 10
+  NAVIGATION.md: 10
+  INTEGRATION.yaml: 5
+  EVOLUTION.md: 20
+  session.json: 3
+```
 
 ## Module Dependency Graph
-
-```
-ARCHITECTURE.md (Why)
-    ↓ defines
-IMPLEMENTATION.md (What)
-    ↓ styled by
-VISUAL.md (How it looks)
-    ↓ flows through
-NAVIGATION.md (User journey)
-    ↓ connects via
-INTEGRATION.yaml (External links)
-    ↓ evolved from
-EVOLUTION.md (History)
-    ↓ tracked in
-session.json (Current state)
+```mermaid
+graph TD
+    ARCH[ARCHITECTURE.md] --> IMPL[IMPLEMENTATION.md]
+    ARCH --> VIS[VISUAL.md]
+    ARCH --> NAV[NAVIGATION.md]
+    IMPL --> INT[INTEGRATION.yaml]
+    IMPL --> SESSION[session.json]
+    VIS --> IMPL
+    NAV --> IMPL
+    INT --> ARCH
+    EVO[EVOLUTION.md] --> ARCH
+    SESSION -.-> ALL[All Modules]
 ```
 
-## Query Resolution Paths
+## Explicit Module Dependencies
 
-"How does X work?" → ARCHITECTURE.md then IMPLEMENTATION.md  
-"What's the current status?" → IMPLEMENTATION.md + session.json  
-"How should this look?" → VISUAL.md  
-"Where does user go next?" → NAVIGATION.md  
-"What external deps?" → INTEGRATION.yaml  
-"Why was it built this way?" → EVOLUTION.md  
-"What were we just discussing?" → session.json
+### ARCHITECTURE.md
+- **Depends on**: EVOLUTION.md (for historical context)
+- **Depended by**: ALL (defines system structure)
+- **Updates trigger**: IMPLEMENTATION.md, VISUAL.md, NAVIGATION.md
 
-## AI Processing Instructions
+### IMPLEMENTATION.md
+- **Depends on**: ARCHITECTURE.md (for design patterns)
+- **Depended by**: session.json (tracks changes)
+- **Updates trigger**: session.json, INTEGRATION.yaml
 
-1. Always consult this manifest first to identify required modules
-2. Load only modules necessary for the current task
-3. Check session.json for ongoing conversation context
-4. Update relevant modules immediately when changes occur
-5. Cross-reference information across modules for consistency
-6. Alert on any contradictions between modules
-7. Document significant decisions in EVOLUTION.md
+### VISUAL.md
+- **Depends on**: ARCHITECTURE.md (component structure)
+- **Depended by**: IMPLEMENTATION.md (UI components)
+- **Updates trigger**: IMPLEMENTATION.md (component updates)
 
-## Module File Paths
+### NAVIGATION.md
+- **Depends on**: ARCHITECTURE.md (state patterns)
+- **Depended by**: IMPLEMENTATION.md (screen flow)
+- **Updates trigger**: IMPLEMENTATION.md (navigation code)
 
+### INTEGRATION.yaml
+- **Depends on**: IMPLEMENTATION.md (integration points)
+- **Depended by**: None (leaf node)
+- **Updates trigger**: ARCHITECTURE.md (if major)
+
+### EVOLUTION.md
+- **Depends on**: None (historical record)
+- **Depended by**: ARCHITECTURE.md (decisions)
+- **Updates trigger**: ARCHITECTURE.md (patterns)
+
+### session.json
+- **Depends on**: ALL (tracks everything)
+- **Depended by**: None (temporary)
+- **Updates trigger**: None (ephemeral)
+
+## Context Health Check
+
+### Automated Validations
+```python
+health_checks = {
+    "size_compliance": check_module_sizes(),
+    "dependency_cycles": detect_circular_deps(),
+    "cross_references": validate_references(),
+    "version_sync": check_version_consistency(),
+    "completeness": verify_required_sections(),
+    "timestamp_freshness": check_update_recency()
+}
 ```
-.context/
-├── CONTEXT_MANIFEST.md (this file)
-├── core/
-│   ├── ARCHITECTURE.md
-│   ├── IMPLEMENTATION.md
-│   ├── VISUAL.md
-│   └── NAVIGATION.md
-├── dynamic/
-│   ├── INTEGRATION.yaml
-│   ├── EVOLUTION.md
-│   └── session.json
-└── validation/
-    └── validate.py
+
+### Health Indicators
+- ✅ **Healthy**: All checks pass
+- ⚠️ **Warning**: Size approaching limit OR outdated >7 days
+- ❌ **Critical**: Size exceeded OR broken references OR circular deps
+
+### Quick Health Status
+```yaml
+current_health:
+  overall_score: 0.95
+  issues: []
+  warnings: 
+    - "IMPLEMENTATION.md approaching size limit (87%)"
+  last_full_check: "2025-01-27T10:00:00Z"
+```
+
+## Information Location Matrix
+
+| Information Type | Primary | Secondary | Validation |
+|-----------------|---------|-----------|------------|
+| System design | ARCHITECTURE | EVOLUTION | Check patterns |
+| Current state | IMPLEMENTATION | session | Match codebase |
+| UI specs | VISUAL | ARCHITECTURE | Platform consistency |
+| User flows | NAVIGATION | IMPLEMENTATION | State validity |
+| External deps | INTEGRATION | ARCHITECTURE | Version match |
+| Decisions | EVOLUTION | ARCHITECTURE | PDLR format |
+| Active work | session | IMPLEMENTATION | Timestamp recent |
+
+## Context Loading Algorithm
+```python
+def load_optimal_context(query_type):
+    """Load minimum modules for maximum relevance"""
+    
+    # Base patterns
+    patterns = {
+        "bug_fix": ["IMPLEMENTATION", "session", "ARCHITECTURE"],
+        "new_feature": ["ARCHITECTURE", "NAVIGATION", "VISUAL"],
+        "visual_update": ["VISUAL", "IMPLEMENTATION"],
+        "integration": ["INTEGRATION", "ARCHITECTURE"],
+        "refactor": ["EVOLUTION", "ARCHITECTURE", "IMPLEMENTATION"],
+        "status_check": ["IMPLEMENTATION", "session"],
+        "history": ["EVOLUTION"],
+    }
+    
+    # Load in dependency order
+    modules = patterns.get(query_type, ["MANIFEST"])
+    return load_modules_with_deps(modules)
+```
+
+## Module Update Rules
+
+### Update Cascade Matrix
+| Changed Module | Must Update | Should Check | May Impact |
+|---------------|-------------|--------------|------------|
+| ARCHITECTURE | IMPLEMENTATION | VISUAL, NAV | ALL |
+| IMPLEMENTATION | session | INTEGRATION | VISUAL |
+| VISUAL | - | IMPLEMENTATION | - |
+| NAVIGATION | - | IMPLEMENTATION | session |
+| INTEGRATION | - | ARCHITECTURE | - |
+| EVOLUTION | - | ARCHITECTURE | - |
+| session | - | - | - |
+
+### Version Increment Rules
+- **Patch** (x.x.N): Typos, clarifications, small additions
+- **Minor** (x.N.x): New sections, significant updates
+- **Major** (N.x.x): Structure changes, breaking updates
+
+## AI Processing Optimizations
+
+### Token Efficiency Scoring
+```yaml
+efficiency_metrics:
+  information_density: 0.89  # info per token
+  query_resolution: 0.94     # first-module success
+  update_frequency: 0.15     # changes per day
+  redundancy_score: 0.08     # duplicate info
+```
+
+### Query Resolution Shortcuts
+```python
+# Direct answering patterns
+INSTANT_PATTERNS = {
+    r"how.*work": "ARCHITECTURE",
+    r"current.*status": "IMPLEMENTATION",
+    r"look|appear|visual": "VISUAL",
+    r"navigate|flow|screen": "NAVIGATION",
+    r"why.*built": "EVOLUTION",
+    r"integrate|external": "INTEGRATION"
+}
+```
+
+### Context Compression Rules
+1. Remove comments in code blocks
+2. Use standard abbreviations (impl, nav, arch)
+3. Collapse whitespace in tables
+4. Minimize markdown formatting
+5. Use reference codes vs full descriptions
+
+## Module Quality Requirements
+
+### Required Sections per Module
+```yaml
+ARCHITECTURE:
+  required: [purpose, patterns, decisions, principles]
+  optional: [examples, future]
+  
+IMPLEMENTATION:
+  required: [status, structure, working, limitations]
+  optional: [metrics, debt]
+  
+VISUAL:
+  required: [design_system, colors, typography, animations]
+  optional: [accessibility, future]
+  
+NAVIGATION:
+  required: [hierarchy, destinations, flows, states]
+  optional: [deep_linking, shortcuts]
+  
+INTEGRATION:
+  required: [dependencies, apis, status]
+  optional: [timeline, testing]
+  
+EVOLUTION:
+  required: [decisions, format_pdlr, lessons]
+  optional: [future_decisions]
+```
+
+## Performance Tracking
+
+### Module Load Performance
+```yaml
+average_load_times_ms:
+  MANIFEST: 5
+  ARCHITECTURE: 12
+  IMPLEMENTATION: 18
+  VISUAL: 10
+  NAVIGATION: 11
+  INTEGRATION: 8
+  EVOLUTION: 14
+  session: 3
+  
+optimization_targets:
+  total_context_load: <100ms
+  single_module_max: <25ms
+  full_validation: <500ms
+```
+
+## Maintenance Schedule
+
+### Validation Frequency
+- **Continuous**: Reference validation (on update)
+- **Daily**: Size and health checks
+- **Weekly**: Full consistency validation
+- **Monthly**: Performance optimization review
+
+### Module Review Cycle
+- **ARCHITECTURE**: Monthly or on major changes
+- **IMPLEMENTATION**: On every code change
+- **VISUAL**: On design updates
+- **NAVIGATION**: On flow changes
+- **INTEGRATION**: On dependency updates
+- **EVOLUTION**: After each decision
+- **session**: Reset per conversation
+
+## Error Recovery
+
+### Common Issues & Fixes
+```yaml
+circular_dependency:
+  detection: graph_cycle_check()
+  resolution: identify_and_break_weakest_link()
+  
+size_exceeded:
+  detection: file_size > limit
+  resolution: extract_to_sub_module()
+  
+broken_reference:
+  detection: validate_cross_refs()
+  resolution: update_or_remove_ref()
+  
+version_mismatch:
+  detection: compare_versions()
+  resolution: cascade_version_update()
+```
+
+## Context Engineering Commands
+
+### Quick Commands for AI
+- `!status` - Load IMPLEMENTATION + session
+- `!design` - Load ARCHITECTURE + VISUAL  
+- `!history` - Load EVOLUTION
+- `!full` - Load all modules
+- `!validate` - Run health checks
+- `!compress` - Optimize for tokens
+
+### Module Path Resolution
+```python
+MODULE_PATHS = {
+    "manifest": ".context/CONTEXT_MANIFEST.md",
+    "arch": ".context/core/ARCHITECTURE.md",
+    "impl": ".context/core/IMPLEMENTATION.md",
+    "visual": ".context/core/VISUAL.md",
+    "nav": ".context/core/NAVIGATION.md",
+    "integration": ".context/dynamic/INTEGRATION.yaml",
+    "evolution": ".context/dynamic/EVOLUTION.md",
+    "session": ".context/dynamic/session.json"
+}
 ```

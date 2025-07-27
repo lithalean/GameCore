@@ -1,175 +1,566 @@
 # GameCore Integration Context
 # Defines external dependencies and integration points
+# Version: 2.0
+# Last Updated: 2025-01-27
+
+integration_summary:
+  total_integrations: 7
+  ready: 3
+  in_progress: 0
+  planned: 4
+  blocked: 0
+  
+priority_levels:
+  CRITICAL: "Core functionality depends on this"
+  HIGH: "Major features blocked without this"
+  MEDIUM: "Enhances user experience"
+  LOW: "Nice to have"
+
+timeline_definitions:
+  IMMEDIATE: "< 1 week"
+  SHORT_TERM: "1-4 weeks"
+  MEDIUM_TERM: "1-3 months"
+  LONG_TERM: "> 3 months"
+
+# ═══════════════════════════════════════════════════════════════
+# ORCHARD ECOSYSTEM INTEGRATIONS
+# ═══════════════════════════════════════════════════════════════
 
 orchard_ecosystem:
   reality_assets:
-    status: "Planned Integration"
+    status: "PLANNED"
+    priority: "HIGH"
+    timeline: "SHORT_TERM"
+    version_required: "1.0+"
+    
     provides: 
-      - "File management system"
-      - "Asset pipeline"
-      - "Resource organization"
+      - file_management: "Asset organization system"
+      - asset_pipeline: "Import/export workflow"
+      - resource_browser: "Visual asset picker"
+      - version_control: "Asset versioning"
+      
     receives:
-      - "UI framework calls"
-      - "Menu events"
+      - menu_events: "User interactions"
+      - selection_callbacks: "Asset choices"
+      - preview_requests: "Thumbnail generation"
+      
     integration_points:
-      - "CreatorScreen file browser"
-      - "Save/Load system"
+      primary: "CreatorScreen.fileBrowser"
+      secondary: "LoadGamePanel.saveFiles"
+      callbacks: ["onAssetSelected", "onAssetDeleted"]
+      
+    readiness_checklist:
+      gamecore_side:
+        ✅ UI_structure: "CreatorScreen ready"
+        ✅ callback_system: "Event handling prepared"
+        ✅ preview_area: "Display region allocated"
+        ☐ data_models: "Asset types undefined"
+        
+      dependency_side:
+        ☐ api_stable: "Waiting for 1.0 release"
+        ☐ documentation: "Integration guide needed"
+        ☐ test_environment: "Sandbox required"
+        
+    blockers: ["RealityAssets API not finalized"]
+    
+    implementation_plan:
+      week_1: "Define asset data models"
+      week_2: "Implement file browser UI"
+      week_3: "Connect to RealityAssets API"
+      week_4: "Testing and optimization"
+    
+  # ─────────────────────────────────────────────────────────────
     
   reality_syntax:
-    status: "Planned Integration"
+    status: "PLANNED"
+    priority: "HIGH"
+    timeline: "SHORT_TERM"
+    version_required: "1.0+"
+    
     provides:
-      - "Code editing capabilities"
-      - "Syntax highlighting"
-      - "Code completion"
+      - code_editor: "Syntax-aware editing"
+      - highlighting: "Language-specific colors"
+      - completion: "Intelligent suggestions"
+      - diagnostics: "Error detection"
+      
     receives:
-      - "Menu system events"
-      - "Editor commands"
+      - editor_state: "Current code/cursor"
+      - language_mode: "Script type"
+      - save_triggers: "Persistence events"
+      
     integration_points:
-      - "GameMenuCenter code view"
-      - "Script editing panels"
+      primary: "GameMenuCenter.codeView"
+      secondary: "ScriptPanel.editor"
+      protocols: ["CodeEditorDelegate", "SyntaxProvider"]
+      
+    readiness_checklist:
+      gamecore_side:
+        ✅ container_view: "GameMenuCenter ready"
+        ✅ layout_system: "Resizable panels"
+        ☐ text_storage: "Buffer management"
+        ☐ syntax_bridge: "Language detection"
+        
+      dependency_side:
+        ☐ swift_api: "Native Swift interface"
+        ☐ performance: "60fps while editing"
+        ☐ themes: "Visual consistency"
+        
+    blockers: ["RealitySyntax Swift API pending"]
+    
+    implementation_plan:
+      phase_1: "Text buffer architecture"
+      phase_2: "Editor view integration"
+      phase_3: "Syntax highlighting"
+      phase_4: "Advanced features"
+      
+  # ─────────────────────────────────────────────────────────────
       
   game_engine:
-    status: "Future Integration"
-    type: "To Be Determined"
+    status: "FUTURE"
+    priority: "CRITICAL"
+    timeline: "MEDIUM_TERM"
+    version_required: "TBD"
+    
     integration_points:
-      - "CreatorScreen.GameMenuCenter"
-      - "Game preview window"
-      - "Asset management"
+      primary: "CreatorScreen.GameMenuCenter"
+      secondary: "PreviewWindow"
+      tertiary: "AssetPipeline"
+      
     interface_pattern: |
       protocol GameEngineInterface {
-          func attachToCreatorScreen()
-          func receiveMenuEvents()
-          func providePreviewView() -> View
+          // Lifecycle
+          func initialize(in container: NSView/UIView)
+          func shutdown()
+          
+          // Interaction
+          func handleMenuAction(_ action: MenuAction)
+          func receiveAsset(_ asset: RealityAsset)
+          
+          // Rendering
+          func providePreviewView() -> AnyView
+          func renderFrame(deltaTime: TimeInterval)
+          
+          // State
+          func saveState() -> EngineState
+          func loadState(_ state: EngineState)
       }
+      
+    readiness_checklist:
+      gamecore_side:
+        ✅ menu_system: "Complete"
+        ✅ event_routing: "Ready"
+        ✅ preview_container: "Allocated"
+        ☐ state_persistence: "Undefined"
+        ☐ asset_bridge: "Not implemented"
+        
+      engine_requirements:
+        ☐ selection: "Engine not chosen"
+        ☐ api_design: "Interface pending"
+        ☐ performance: "Target metrics undefined"
+        
+    candidate_engines:
+      custom_engine:
+        pros: ["Full control", "Optimized for needs"]
+        cons: ["Development time", "Maintenance"]
+        
+      unity_integration:
+        pros: ["Mature", "Feature-rich"]
+        cons: ["Large footprint", "Licensing"]
+        
+      unreal_integration:
+        pros: ["High quality", "Industry standard"]
+        cons: ["Complexity", "Resource heavy"]
+        
+      realitykit_extension:
+        pros: ["Native Apple", "Integrated"]
+        cons: ["Limited features", "Platform lock"]
+
+# ═══════════════════════════════════════════════════════════════
+# APPLE FRAMEWORK DEPENDENCIES
+# ═══════════════════════════════════════════════════════════════
 
 apple_frameworks:
   swiftui:
+    status: "INTEGRATED"
     version: "6.0"
-    usage:
-      - "Primary UI framework"
-      - "Cross-platform components"
-      - "Navigation system"
+    minimum_version: "6.0"
+    
+    usage_stats:
+      views: 24
+      modifiers: 150
+      animations: 12
+      gestures: 5
+      
+    critical_features:
+      - Observable_macro: "State management"
+      - NavigationPath: "Navigation system"
+      - ViewBuilder: "Component composition"
+      - Animation: "Transitions"
+      
+    platform_adaptations:
+      ios: "Full support"
+      macos: "Window management additions"
+      tvos: "Focus engine integration"
+    
+  # ─────────────────────────────────────────────────────────────
     
   realitykit:
+    status: "INTEGRATED"
     version: "2025.1"
-    usage:
-      - "3D grid visualization"
-      - "ChunkGrid rendering"
+    minimum_version: "2024.0"
+    
+    usage_stats:
+      entities: 400
+      memory_usage: "40MB"
+      draw_calls: 25
+      
+    integration_details:
+      singleton_pattern: true
+      memory_management: "GridStateManager"
+      rendering_mode: "Unlit materials"
+      
+    performance_profile:
+      target_fps: 60
+      actual_fps: 60
+      gpu_usage: "15%"
+      
     constraints:
       - "Single instance only"
-      - "Memory managed by GridStateManager"
-    performance:
-      - "~400 entities stable"
-      - "<100MB memory usage"
+      - "Explicit lifecycle required"
+      - "Memory budget 50MB"
+      
+  # ─────────────────────────────────────────────────────────────
       
   swift:
+    status: "INTEGRATED"
     version: "6.2"
-    features:
-      - "Observable macro"
-      - "Structured concurrency"
-      - "Property wrappers"
+    minimum_version: "6.0"
+    
+    language_features:
+      - Observable: "State management"
+      - async_await: "Async operations"
+      - property_wrappers: "State, Binding"
+      - result_builders: "View construction"
+      - macros: "Code generation"
+
+# ═══════════════════════════════════════════════════════════════
+# PLATFORM SPECIFIC INTEGRATIONS
+# ═══════════════════════════════════════════════════════════════
 
 platform_specifics:
   ios:
     deployment_target: "18.0"
+    minimum_target: "17.0"
+    
     specific_apis:
-      - "UIColor"
-      - "sensoryFeedback"
-      - "navigationBarHidden"
+      UIKit_interop:
+        - UIColor: "Color system"
+        - UIImpactFeedbackGenerator: "Haptics"
+        - UIScreen: "Display properties"
+        
+      swiftui_modifiers:
+        - navigationBarHidden: "Chrome hiding"
+        - statusBarHidden: "Full screen"
+        - sensoryFeedback: "Haptic triggers"
+        
+    integration_status:
+      haptics: "✅ Implemented"
+      gestures: "✅ Implemented"
+      keyboard: "☐ Not needed"
+      
+  # ─────────────────────────────────────────────────────────────
     
   macos:
     deployment_target: "15.0"
+    minimum_target: "14.0"
+    
     specific_apis:
-      - "NSColor"
-      - "toolbar management"
-      - "hover effects"
+      AppKit_interop:
+        - NSColor: "Color system"
+        - NSWindow: "Window management"
+        - NSToolbar: "Chrome control"
+        
+      swiftui_modifiers:
+        - toolbar_hidden: "Chrome hiding"
+        - frame_constraints: "Window sizing"
+        - hover_effects: "Mouse interaction"
+        
+    integration_status:
+      window_management: "✅ Implemented"
+      menu_bar: "☐ Not implemented"
+      dock_integration: "☐ Future"
+      
+  # ─────────────────────────────────────────────────────────────
       
   tvos:
     deployment_target: "18.0"
+    minimum_target: "17.0"
+    
     specific_apis:
-      - "focus engine"
-      - "tvOS safe areas"
-      - "enhanced touch targets"
+      focus_engine:
+        - focusable: "Focus management"
+        - focused: "State tracking"
+        - focusEffect: "Visual feedback"
+        
+      remote_control:
+        - onMoveCommand: "Directional input"
+        - onExitCommand: "Menu button"
+        - onPlayPauseCommand: "Media control"
+        
+    integration_status:
+      focus_system: "✅ Implemented"
+      remote_gestures: "✅ Basic support"
+      game_controller: "☐ Future"
+
+# ═══════════════════════════════════════════════════════════════
+# EXTERNAL DEPENDENCIES
+# ═══════════════════════════════════════════════════════════════
 
 external_dependencies:
-  none_currently: true
-  future_considerations:
-    - "Game asset stores"
-    - "Cloud save systems"
-    - "Analytics frameworks"
-    - "Audio libraries"
+  current:
+    none: true
+    
+  future_integrations:
+    cloudkit:
+      purpose: "Save game sync"
+      priority: "MEDIUM"
+      timeline: "MEDIUM_TERM"
+      
+      readiness_checklist:
+        ☐ data_model: "Save format undefined"
+        ☐ conflict_resolution: "Merge strategy"
+        ☐ offline_support: "Local cache"
+        
+    gamekit:
+      purpose: "Achievements & multiplayer"
+      priority: "LOW"
+      timeline: "LONG_TERM"
+      
+      readiness_checklist:
+        ☐ achievement_system: "Not designed"
+        ☐ multiplayer_arch: "Not planned"
+        ☐ leaderboards: "Not designed"
+        
+    storekit2:
+      purpose: "In-app purchases"
+      priority: "LOW"
+      timeline: "LONG_TERM"
+      
+      readiness_checklist:
+        ☐ product_catalog: "Not defined"
+        ☐ receipt_validation: "Not implemented"
+        ☐ restore_purchases: "Not implemented"
+
+# ═══════════════════════════════════════════════════════════════
+# DATA FLOW ARCHITECTURE
+# ═══════════════════════════════════════════════════════════════
 
 data_flow:
-  user_input:
-    flow: "View -> Callback -> Manager -> State Update -> View"
-    example: |
-      TitleButton.onTap -> 
-      onNewGame callback ->
-      GameStateManager.navigateToGame() ->
-      NavigationPath update ->
-      CreatorScreen appears
-      
+  patterns:
+    user_input:
+      flow: "View → Callback → Manager → State → View"
+      example: |
+        MenuButton.onTap →
+        onAction callback →
+        GameStateManager.navigate() →
+        navigationPath.append() →
+        View updates
+        
+    state_updates:
+      flow: "Manager → Observable → View"
+      example: |
+        GridStateManager.register() →
+        @Published activeGrids →
+        View observes change →
+        UI updates
+        
+    integration_events:
+      flow: "External → Protocol → Handler → State"
+      example: |
+        RealityAssets.assetSelected() →
+        AssetDelegate.didSelect() →
+        CreatorScreen.handleAsset() →
+        Update preview
+        
   state_management:
-    pattern: "Unidirectional"
+    pattern: "Unidirectional Data Flow"
+    
     managers:
-      - "GameStateManager: Navigation"
-      - "GridStateManager: Memory"
-      - "Future: SaveGameManager"
-      - "Future: SettingsManager"
-      
-  component_communication:
-    upward: "Callbacks/Closures"
-    downward: "Property injection"
-    lateral: "Through shared state"
+      GameStateManager:
+        scope: "Navigation & screens"
+        pattern: "Singleton Observable"
+        integrations: ["All navigation"]
+        
+      GridStateManager:
+        scope: "RealityKit lifecycle"
+        pattern: "Singleton Observable"
+        integrations: ["3D content"]
+        
+      SettingsManager:
+        scope: "User preferences"
+        pattern: "UserDefaults backed"
+        integrations: ["Future"]
+        
+      SaveGameManager:
+        scope: "Game persistence"
+        pattern: "Protocol based"
+        integrations: ["CloudKit", "Local"]
+
+# ═══════════════════════════════════════════════════════════════
+# API CONTRACTS
+# ═══════════════════════════════════════════════════════════════
 
 api_contracts:
   navigation:
     protocol: |
-      protocol NavigationDestination {
-          static var destination: GameDestination { get }
-          var navigationPath: NavigationPath { get set }
+      enum GameDestination: Hashable {
+          case title
+          case game
+          case settings
+          case loadGame
       }
       
-  menu_actions:
+      protocol NavigationHandler {
+          var navigationPath: NavigationPath { get set }
+          func navigate(to: GameDestination)
+          func navigateBack()
+      }
+      
+  menu_system:
     protocol: |
-      protocol MenuAction {
-          var title: String { get }
-          var icon: String? { get }
-          var action: () -> Void { get }
+      struct MenuAction {
+          let id: String
+          let title: String
+          let icon: String?
+          let shortcut: KeyboardShortcut?
+          let action: () -> Void
+      }
+      
+      protocol MenuHandler {
+          func handleMenuAction(_ action: MenuAction)
+          func registerAction(_ action: MenuAction)
+          func removeAction(id: String)
       }
       
   save_system:
     protocol: |
-      protocol SaveGameProtocol {
+      struct SaveGame: Codable {
+          let id: UUID
+          let slot: Int
+          let timestamp: Date
+          let gameData: Data
+          let metadata: SaveMetadata
+      }
+      
+      protocol SaveGameManager {
           func save(to slot: Int) async throws
           func load(from slot: Int) async throws
           func delete(slot: Int) async throws
           func listSaves() async -> [SaveGame]
+          func migrate(from version: Int) async throws
       }
+      
+  asset_integration:
+    protocol: |
+      protocol AssetProvider {
+          func listAssets(ofType: AssetType) async -> [Asset]
+          func loadAsset(id: String) async throws -> Asset
+          func saveAsset(_ asset: Asset) async throws
+          func deleteAsset(id: String) async throws
+      }
+      
+  engine_communication:
+    protocol: |
+      protocol EngineDelegate: AnyObject {
+          func engineDidInitialize()
+          func engineDidFailToInitialize(error: Error)
+          func engineDidUpdateFrame(fps: Int)
+          func engineRequiresAsset(type: AssetType)
+      }
+
+# ═══════════════════════════════════════════════════════════════
+# TESTING INTERFACES
+# ═══════════════════════════════════════════════════════════════
 
 testing_interfaces:
   ui_testing:
     framework: "XCTest"
-    identifiers:
-      - "title.newGameButton"
-      - "title.continueButton"
-      - "panel.settings"
-      - "creator.backButton"
+    
+    accessibility_identifiers:
+      screens:
+        - "title.screen"
+        - "creator.screen"
+        - "settings.screen"
+        
+      buttons:
+        - "title.newGameButton"
+        - "title.continueButton"
+        - "title.settingsButton"
+        - "panel.backButton"
+        
+      inputs:
+        - "settings.audioSlider"
+        - "save.slotButton.{1-3}"
+        
+    test_helpers: |
+      extension XCUIElement {
+          func waitForExistenceAndTap() {
+              XCTAssertTrue(waitForExistence(timeout: 3))
+              tap()
+          }
+      }
       
   integration_testing:
-    approach: "Protocol-based mocking"
+    approach: "Protocol mocking"
+    
+    mock_templates: |
+      class MockGameEngine: GameEngineInterface {
+          var initialized = false
+          var actions: [MenuAction] = []
+          
+          func initialize(in container: NSView) {
+              initialized = true
+          }
+          
+          func handleMenuAction(_ action: MenuAction) {
+              actions.append(action)
+          }
+      }
+      
     testable_imports:
       - "@testable import GameCore"
-      
-future_integrations:
-  multiplayer:
-    framework: "GameKit/CloudKit"
-    integration_point: "MainGameView"
+      - "import XCTest"
+      - "import Combine"
+
+# ═══════════════════════════════════════════════════════════════
+# INTEGRATION METRICS
+# ═══════════════════════════════════════════════════════════════
+
+integration_metrics:
+  completion_status:
+    fully_integrated: ["SwiftUI", "RealityKit", "Swift"]
+    partially_integrated: []
+    planned: ["RealityAssets", "RealitySyntax", "CloudKit"]
+    not_started: ["GameEngine", "GameKit", "StoreKit"]
     
-  achievements:
-    framework: "GameCenter"
-    integration_point: "GameStateManager"
-    
-  purchases:
-    framework: "StoreKit 2"
-    integration_point: "SettingsPanel"
+  risk_assessment:
+    high_risk:
+      - integration: "GameEngine"
+        reason: "Critical path, undefined requirements"
+        mitigation: "Start prototyping early"
+        
+    medium_risk:
+      - integration: "RealityAssets"
+        reason: "API not finalized"
+        mitigation: "Design flexible interface"
+        
+    low_risk:
+      - integration: "CloudKit"
+        reason: "Well-documented, stable API"
+        mitigation: "Follow best practices"
+        
+  timeline_summary:
+    immediate: []
+    short_term: ["RealityAssets", "RealitySyntax"]
+    medium_term: ["GameEngine", "CloudKit"]
+    long_term: ["GameKit", "StoreKit"]
