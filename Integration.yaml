@@ -1,0 +1,175 @@
+# GameCore Integration Context
+# Defines external dependencies and integration points
+
+orchard_ecosystem:
+  reality_assets:
+    status: "Planned Integration"
+    provides: 
+      - "File management system"
+      - "Asset pipeline"
+      - "Resource organization"
+    receives:
+      - "UI framework calls"
+      - "Menu events"
+    integration_points:
+      - "CreatorScreen file browser"
+      - "Save/Load system"
+    
+  reality_syntax:
+    status: "Planned Integration"
+    provides:
+      - "Code editing capabilities"
+      - "Syntax highlighting"
+      - "Code completion"
+    receives:
+      - "Menu system events"
+      - "Editor commands"
+    integration_points:
+      - "GameMenuCenter code view"
+      - "Script editing panels"
+      
+  game_engine:
+    status: "Future Integration"
+    type: "To Be Determined"
+    integration_points:
+      - "CreatorScreen.GameMenuCenter"
+      - "Game preview window"
+      - "Asset management"
+    interface_pattern: |
+      protocol GameEngineInterface {
+          func attachToCreatorScreen()
+          func receiveMenuEvents()
+          func providePreviewView() -> View
+      }
+
+apple_frameworks:
+  swiftui:
+    version: "6.0"
+    usage:
+      - "Primary UI framework"
+      - "Cross-platform components"
+      - "Navigation system"
+    
+  realitykit:
+    version: "2025.1"
+    usage:
+      - "3D grid visualization"
+      - "ChunkGrid rendering"
+    constraints:
+      - "Single instance only"
+      - "Memory managed by GridStateManager"
+    performance:
+      - "~400 entities stable"
+      - "<100MB memory usage"
+      
+  swift:
+    version: "6.2"
+    features:
+      - "Observable macro"
+      - "Structured concurrency"
+      - "Property wrappers"
+
+platform_specifics:
+  ios:
+    deployment_target: "18.0"
+    specific_apis:
+      - "UIColor"
+      - "sensoryFeedback"
+      - "navigationBarHidden"
+    
+  macos:
+    deployment_target: "15.0"
+    specific_apis:
+      - "NSColor"
+      - "toolbar management"
+      - "hover effects"
+      
+  tvos:
+    deployment_target: "18.0"
+    specific_apis:
+      - "focus engine"
+      - "tvOS safe areas"
+      - "enhanced touch targets"
+
+external_dependencies:
+  none_currently: true
+  future_considerations:
+    - "Game asset stores"
+    - "Cloud save systems"
+    - "Analytics frameworks"
+    - "Audio libraries"
+
+data_flow:
+  user_input:
+    flow: "View -> Callback -> Manager -> State Update -> View"
+    example: |
+      TitleButton.onTap -> 
+      onNewGame callback ->
+      GameStateManager.navigateToGame() ->
+      NavigationPath update ->
+      CreatorScreen appears
+      
+  state_management:
+    pattern: "Unidirectional"
+    managers:
+      - "GameStateManager: Navigation"
+      - "GridStateManager: Memory"
+      - "Future: SaveGameManager"
+      - "Future: SettingsManager"
+      
+  component_communication:
+    upward: "Callbacks/Closures"
+    downward: "Property injection"
+    lateral: "Through shared state"
+
+api_contracts:
+  navigation:
+    protocol: |
+      protocol NavigationDestination {
+          static var destination: GameDestination { get }
+          var navigationPath: NavigationPath { get set }
+      }
+      
+  menu_actions:
+    protocol: |
+      protocol MenuAction {
+          var title: String { get }
+          var icon: String? { get }
+          var action: () -> Void { get }
+      }
+      
+  save_system:
+    protocol: |
+      protocol SaveGameProtocol {
+          func save(to slot: Int) async throws
+          func load(from slot: Int) async throws
+          func delete(slot: Int) async throws
+          func listSaves() async -> [SaveGame]
+      }
+
+testing_interfaces:
+  ui_testing:
+    framework: "XCTest"
+    identifiers:
+      - "title.newGameButton"
+      - "title.continueButton"
+      - "panel.settings"
+      - "creator.backButton"
+      
+  integration_testing:
+    approach: "Protocol-based mocking"
+    testable_imports:
+      - "@testable import GameCore"
+      
+future_integrations:
+  multiplayer:
+    framework: "GameKit/CloudKit"
+    integration_point: "MainGameView"
+    
+  achievements:
+    framework: "GameCenter"
+    integration_point: "GameStateManager"
+    
+  purchases:
+    framework: "StoreKit 2"
+    integration_point: "SettingsPanel"
