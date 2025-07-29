@@ -13,46 +13,72 @@ lithalean@Mac GameCore % tree
 │   │   ├── GameCoreApp.swift
 │   │   └── Item.swift
 │   ├── Core
-│   │   ├── ChunkGrid.swift
-│   │   └── GameMenuSystem.swift
-│   └── Menu
-│       ├── GameMenuBottom.swift
-│       ├── GameMenuCenter.swift
-│       └── GameMenuTop.swift
-├── GameCore.xcodeproj
-│   ├── project.pbxproj
-│   ├── project.xcworkspace
-│   │   ├── contents.xcworkspacedata
-│   │   ├── xcshareddata
-│   │   │   └── swiftpm
-│   │   │       └── configuration
-│   │   └── xcuserdata
-│   │       └── lithalean.xcuserdatad
-│   │           └── UserInterfaceState.xcuserstate
-│   └── xcuserdata
-│       └── lithalean.xcuserdatad
-│           └── xcschemes
-│               └── xcschememanagement.plist
-├── Managers
-│   ├── GameStateManager.swift
-│   ├── GridStateManager.swift
-│   └── SlidingPanelManager.swift
-├── Styles
-│   ├── DynamicTitleBar.swift
-│   ├── MenuButton.swift
-│   ├── ScreenTransition.swift
-│   ├── SplashBackground.swift
-│   ├── TitleBackground.swift
-│   └── TitleButton.swift
-└── Views
-    ├── CreatorScreen.swift
-    ├── MainGameView.swift
-    ├── SplashScreen.swift
-    └── TitleScreen
-        ├── TitleScreen.swift
-        ├── TitleScreenContent.swift
-        ├── TitleScreenNavigation.swift
-        └── TitleScreenView.swift
+│   │   ├── GameColors.swift
+│   │   ├── Managers
+│   │   │   ├── DayNightManager.swift
+│   │   │   ├── GameStateManager.swift
+│   │   │   ├── SceneLoader.swift
+│   │   │   ├── SceneManager.swift
+│   │   │   └── SlidingPanelManager.swift
+│   │   ├── MetalGridRenderer.swift
+│   │   ├── MetalRenderer.swift
+│   │   ├── MetalSkyRenderer.swift
+│   │   ├── Shaders
+│   │   │   ├── DayNightBackgroundShader.metal
+│   │   │   └── GridShader.metal
+│   │   ├── SharedTypes.swift
+│   │   └── Systems
+│   │       ├── DayNightSystem.swift
+│   │       ├── GameMenuSystem.swift
+│   │       └── ProceduralSkySystem.swift
+│   ├── Data
+│   │   └── GridVertexData.bin
+│   ├── Menu
+│   │   ├── GameMenuBottom.swift
+│   │   ├── GameMenuCenter.swift
+│   │   └── GameMenuTop.swift
+│   ├── Scenes
+│   │   ├── SplashScreen
+│   │   │   ├── SplashBackground.swift
+│   │   │   └── SplashScreen.swift
+│   │   └── TitleScreen
+│   │       ├── TitleBackground.swift
+│   │       ├── TitleButton.swift
+│   │       ├── TitleScreen.plist
+│   │       ├── TitleScreen.swift
+│   │       ├── TitleScreenContent.swift
+│   │       ├── TitleScreenNavigation.swift
+│   │       └── TitleScreenView.swift
+│   ├── Sources
+│   │   └── Shared
+│   │       ├── Extensions
+│   │       │   ├── FilePermissionsHelper.swift
+│   │       │   └── HapticFeedback.swift
+│   │       ├── PlatformAliases.swift
+│   │       └── PlatformColor.swift
+│   ├── Styles
+│   │   ├── DynamicTitleBar.swift
+│   │   ├── MenuButton.swift
+│   │   └── ScreenTransition.swift
+│   └── Views
+│       ├── CreatorScreen.swift
+│       ├── MainGameView.swift
+│       ├── MetalGridTest.swift
+│       └── MetalSkyTest.swift
+└── GameCore.xcodeproj
+    ├── project.pbxproj
+    ├── project.xcworkspace
+    │   ├── contents.xcworkspacedata
+    │   ├── xcshareddata
+    │   │   └── swiftpm
+    │   │       └── configuration
+    │   └── xcuserdata
+    │       └── lithalean.xcuserdatad
+    │           └── UserInterfaceState.xcuserstate
+    └── xcuserdata
+        └── lithalean.xcuserdatad
+            └── xcschemes
+                └── xcschememanagement.plist
 
-22 directories, 31 files
+30 directories, 49 files
 lithalean@Mac GameCore % 
